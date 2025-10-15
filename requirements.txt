@@ -1,0 +1,14 @@
+streamlit
+streamlit-folium
+geocoder
+requests
+python-dotenv
+Flask
+waitress
+playwright
+streamlit-autorefresh
+pyngrok
+psutil
+qrcode
+geopy
+python-dateutil
