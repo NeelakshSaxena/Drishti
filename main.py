@@ -2,6 +2,7 @@ import os
 import json
 import sys
 import time
+import re
 from datetime import datetime, timezone, timedelta
 from flask import Flask, render_template, request, jsonify
 import uuid
@@ -10,7 +11,7 @@ import uuid
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from jules.utils import check_airport_proximity, haversine_distance
-# aviation.py is no longer used
+from jules.aviation import get_flight_data
 
 # --- Constants & Configuration ---
 app = Flask(__name__, template_folder='templates')

@@ -38,7 +38,7 @@ def run():
     """
     Launches the backend, frontend, and a public ngrok tunnel for the tracking link.
     """
-    print("🚀 Launching Project Sanjaya (Keystone)...")
+    print("🚀 Launching Project Sanjaya (Render Edition)...")
 
     # --- Start Waitress Server ---
     try:

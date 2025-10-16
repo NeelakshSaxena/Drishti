@@ -1,74 +1,70 @@
-# 🚀 Deployment Instructions for Project Sanjaya
+# 🚀 Deployment Instructions (Render & Streamlit Cloud)
 
-To make Project Sanjaya accessible from anywhere, you need to deploy its two main components: the **Flask Backend** and the **Streamlit Dashboard**.
+This guide provides step-by-step instructions to deploy Project Sanjaya, making it publicly accessible. We will deploy the backend to **Render** and the dashboard to **Streamlit Community Cloud**.
 
 ---
 
-## 1. Deploying the Flask Backend
+### Part 1: Deploying the Backend to Render
 
-The Flask backend needs to be deployed to a web hosting service so that your mobile phone can access it from any network. A service like **Render** or **Heroku** is a good choice.
+Render will host our Python backend and provide a public URL for the tracking web page.
 
-### Using Render (Recommended)
+1.  **Sign Up & Connect GitHub:**
+    *   Create a free account on [render.com](https://render.com).
+    *   Connect your GitHub account and authorize it to access the `project_sanjaya` repository.
 
-1.  **Sign up for a free account on [Render](https://render.com/).**
-2.  **Create a `gunicorn` entry in `requirements.txt`**:
-    Render uses Gunicorn to serve Flask apps. Add it to your `requirements.txt`:
-    ```
-    streamlit
-    streamlit-folium
-    geocoder
-    requests
-    python-dotenv
-    Flask
-    gunicorn
-    ```
-3.  **Create a New Web Service on Render**:
-    *   Go to your Dashboard and click "New" -> "Web Service".
-    *   Connect your GitHub repository where this project is stored.
-4.  **Configure the Service**:
-    *   **Name**: Give your service a name (e.g., `sanjaya-tracker-backend`).
-    *   **Region**: Choose a region close to you.
-    *   **Branch**: Select your main branch.
-    *   **Build Command**: `pip install -r requirements.txt` (this is usually the default).
-    *   **Start Command**: `gunicorn main:app`
-5.  **Add Environment Variables**:
-    *   Go to the "Environment" tab for your new service.
-    *   Add a new secret file.
-    *   **Filename**: `.env`
-    *   **Contents**:
+2.  **Create a New Web Service:**
+    *   From your Render Dashboard, click **New +** -> **Web Service**.
+    *   Select your `project_sanjaya` repository.
+    *   Give your service a unique name (e.g., `sanjaya-tracker-backend`).
+
+3.  **Configure the Service:**
+    *   **Region:** Choose a region close to you.
+    *   **Branch:** Select your main branch (e.g., `main` or `master`).
+    *   **Build Command:** `pip install -r project_sanjaya/requirements.txt`
+    *   **Start Command:** `waitress-serve --host=0.0.0.0 --port=$PORT main:app`
+        *   *Note: Render automatically sets the `$PORT` environment variable.*
+
+4.  **Add Environment Variables:**
+    *   Before the first deployment, go to the **Environment** tab.
+    *   Under "Secret Files", click **Add Secret File**.
+    *   **Filename:** `project_sanjaya/.env`
+    *   **Contents:**
         ```
-        AVIATIONSTACK_KEY="YOUR_REAL_API_KEY"
+        AVIATIONSTACK_KEY=YOUR_KEY_HERE
         ```
-6.  **Deploy**:
-    *   Click "Create Web Service". Render will build and deploy your app.
-    *   Once deployed, you will get a public URL (e.g., `https://sanjaya-tracker-backend.onrender.com`). **This is the URL you will use on your phone.**
+        (Replace with your actual AviationStack API key).
+
+5.  **Deploy:**
+    *   Click **Create Web Service**. Render will build and deploy your application.
+    *   Once it's live, copy the public URL provided (e.g., `https://sanjaya-tracker-backend.onrender.com`). This is your **Backend URL**.
 
 ---
 
-## 2. Deploying the Streamlit Dashboard
+### Part 2: Deploying the Dashboard to Streamlit Cloud
 
-The Streamlit dashboard is best deployed using **Streamlit Community Cloud**.
+Streamlit Community Cloud is the best place to host our dashboard.
 
-1.  **Sign up for a free account on [Streamlit Community Cloud](https://streamlit.io/cloud).**
-2.  **Push your code to a public GitHub repository.** (Streamlit Cloud requires this).
-3.  **Deploy from Streamlit Cloud**:
-    *   From your workspace, click "New app".
-    *   Select the repository and branch you want to deploy.
-    *   **Main file path**: `dashboard/app.py`
-    *   Give your app a custom URL.
-4.  **Important: Update the Backend URL**:
-    The Streamlit app doesn't directly connect to the backend, but it's good practice to know where your backend is. The key is that the **phone** must be able to reach the **backend's public URL**.
-5.  **Deploy**:
-    *   Click "Deploy!". Your dashboard will be live in a few minutes.
+1.  **Sign Up & Connect GitHub:**
+    *   Create a free account at [streamlit.io/cloud](https://streamlit.io/cloud).
+    *   Connect the same GitHub repository.
+
+2.  **Deploy the App:**
+    *   From your workspace, click **New app**.
+    *   Select your repository and branch.
+    *   Set the **Main file path** to `project_sanjaya/dashboard/app.py`.
+    *   Give your app a custom URL (e.g., `my-sanjaya-dashboard`).
+
+3.  **Add the Backend URL as a Secret:**
+    *   In the "Advanced settings" section, add the following secret:
+        *   **Key:** `BACKEND_URL`
+        *   **Value:** Your **Backend URL** from Render (e.g., `https://sanjaya-tracker-backend.onrender.com`)
+
+4.  **Deploy:**
+    *   Click **Deploy!**. Your dashboard will be live in a few minutes.
 
 ---
 
-## 🏁 Final Steps
+### Final Workflow
 
-1.  **Start a tracking session**:
-    *   Navigate to your public **Flask backend URL** on your mobile phone (e.g., `https://sanjaya-tracker-backend.onrender.com`).
-    *   Enter your details and start tracking.
-2.  **View the dashboard**:
-    *   Open your public **Streamlit dashboard URL** on any device to see the live tracking in action.
-
-Your tracker is now live and accessible globally!
+*   To start a new trip, go to your **Render Backend URL**.
+*   To view the live dashboard, go to your **Streamlit Cloud URL**. The "Reset Trip" button on the dashboard will now correctly communicate with your deployed backend.
