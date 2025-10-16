@@ -10,8 +10,8 @@ import uuid
 # Ensure the 'jules' module can be found
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from jules.utils import check_airport_proximity, haversine_distance
-from jules.aviation import get_flight_data
+# from jules.utils import check_airport_proximity, haversine_distance
+
 
 # --- Constants & Configuration ---
 app = Flask(__name__, template_folder='templates')
