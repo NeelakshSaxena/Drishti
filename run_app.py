@@ -5,8 +5,6 @@ import atexit
 import os
 import threading
 from pyngrok import ngrok, conf
-
-# Import background thread functions
 from main import time_based_status_thread
 
 # --- Configuration ---
@@ -17,7 +15,6 @@ FLASK_APP_MODULE = "main:app"
 STREAMLIT_APP_FILE = "dashboard/app.py"
 NGROK_CONFIG_FILE = "ngrok.yml"
 
-# --- Global Process Management ---
 processes = []
 ngrok_tunnel = None
 
@@ -30,7 +27,10 @@ def cleanup():
             p.terminate()
             p.wait()
     if ngrok_tunnel:
-        ngrok.disconnect(ngrok_tunnel.public_url)
+        try:
+            ngrok.disconnect(ngrok_tunnel.public_url)
+        except Exception:
+            pass
     print("All services stopped.")
 
 
@@ -41,7 +41,7 @@ def run():
     env = os.getenv("ENV", "local").lower()
     print(f"🚀 Launching Project Sanjaya ({env.title()} Mode)...")
 
-    # --- Start Waitress Server ---
+    # --- Start Flask (Waitress) server ---
     try:
         waitress_process = subprocess.Popen([
             "waitress-serve", f"--threads={WAITRESS_THREADS}",
@@ -53,7 +53,7 @@ def run():
         print(f"❌ Failed to start Waitress: {e}")
         sys.exit(1)
 
-    # --- Start Background Thread ---
+    # --- Start background thread ---
     status_updater = threading.Thread(target=time_based_status_thread, daemon=True)
     status_updater.start()
     print("✅ Time-based status updater thread started.")
@@ -61,42 +61,53 @@ def run():
     # --- LOCAL MODE ---
     if env == "local":
         try:
+            # Start Streamlit first (for ngrok to connect to it)
+            print("Starting Streamlit dashboard...")
+            streamlit_process = subprocess.Popen(
+                [sys.executable, "-m", "streamlit", "run", STREAMLIT_APP_FILE,
+                 "--server.port", str(STREAMLIT_PORT)]
+            )
+            processes.append(streamlit_process)
+            print(f"✅ Streamlit dashboard started with PID: {streamlit_process.pid}")
+
+            # Wait a moment for Streamlit to spin up
+            time.sleep(5)
+
+            # Configure and start ngrok for Streamlit (not Flask)
             conf.get_default().config_path = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 NGROK_CONFIG_FILE
             )
-            print("Starting ngrok tunnel for tracking link...")
+            print("Starting ngrok tunnel for Streamlit dashboard...")
             global ngrok_tunnel
-            ngrok_tunnel = ngrok.connect(FLASK_PORT, "http")
+            ngrok_tunnel = ngrok.connect(STREAMLIT_PORT, "http")
             public_url = ngrok_tunnel.public_url
 
             print("=" * 60)
-            print(f"📲 YOUR PUBLIC TRACKING URL: {public_url}")
-            print(f"🖥️  YOUR LOCAL DASHBOARD URL: http://localhost:{STREAMLIT_PORT}")
+            print(f"📲 YOUR PUBLIC TRACKING URL (Streamlit): {public_url}")
+            print(f"🖥️  YOUR LOCAL BACKEND URL: http://localhost:{FLASK_PORT}")
             print("=" * 60)
         except Exception as e:
             print(f"❌ Failed to start ngrok tunnel: {e}")
-            public_url = f"http://localhost:{FLASK_PORT}"
+            public_url = f"http://localhost:{STREAMLIT_PORT}"
 
-        # Start Streamlit
+    # --- RENDER MODE ---
+    elif env == "render":
+        # No ngrok — Render manages the external URL automatically.
         try:
-            print("Starting Streamlit dashboard...")
+            print("Starting Streamlit dashboard (Render mode)...")
             streamlit_process = subprocess.Popen(
                 [sys.executable, "-m", "streamlit", "run", STREAMLIT_APP_FILE,
-                 "--server.port", str(STREAMLIT_PORT), "--", public_url]
+                 "--server.port", str(STREAMLIT_PORT)]
             )
             processes.append(streamlit_process)
             print(f"✅ Streamlit dashboard started with PID: {streamlit_process.pid}")
         except Exception as e:
-            print(f"❌ Failed to start Streamlit dashboard: {e}")
+            print(f"❌ Failed to start Streamlit on Render: {e}")
 
-    # --- RENDER MODE ---
-    elif env == "render":
-        # On Render, no ngrok or Streamlit.
-        # Render provides its own public URL and handles the frontend separately.
         print("=" * 60)
         print(f"🌐 Render public URL is auto-managed by Render.")
-        print(f"🖥️  Streamlit dashboard not started in this mode.")
+        print(f"📲 Streamlit dashboard running internally on port {STREAMLIT_PORT}.")
         print("=" * 60)
 
     print("\n🎉 Project Sanjaya is running!")
