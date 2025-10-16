@@ -4,12 +4,10 @@ import json
 import folium
 from streamlit_folium import st_folium
 import os
-import sys
 import requests
 from datetime import datetime, timezone, timedelta
 import qrcode
 from io import BytesIO
-
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -20,22 +18,25 @@ st.set_page_config(
 )
 
 # --- Constants ---
-TRIP_INFO_FILE = os.path.join(os.path.dirname(__file__), '..', 'logs', 'trip_info.json')
-TRIP_LOG_FILE = os.path.join(os.path.dirname(__file__), '..', 'logs', 'trip_log.json')
-MAP_IMAGE_FILE = os.path.join(os.path.dirname(__file__), '..', 'logs', 'final_trip_map.png')
+# Use public URL or fallback to localhost for local dev
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5000")
+
+# Assets folder
+ASSETS_PATH = os.path.join(os.path.dirname(__file__), 'assets')
 
 # --- Helper Functions ---
-def load_json(file_path):
-    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-        return {}
+def load_json_from_backend(endpoint):
+    """Fetch JSON data from Flask backend"""
     try:
-        with open(file_path, "r") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return {}
+        resp = requests.get(f"{BACKEND_URL}/{endpoint}")
+        if resp.ok:
+            return resp.json()
+    except requests.exceptions.RequestException:
+        pass
+    return {}
 
 def to_ist(utc_dt_str):
-    """Converts a UTC isoformat string to a user-friendly IST string."""
+    """Convert UTC isoformat string to IST"""
     try:
         utc_dt = datetime.fromisoformat(utc_dt_str.replace("Z", "+00:00"))
         ist_dt = utc_dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
@@ -44,16 +45,15 @@ def to_ist(utc_dt_str):
         return "N/A"
 
 # --- Main Dashboard ---
-st.title("🛰️ Jules Tracker — Project Sanjaya (Keystone)")
+st.title("🛰️ Jules Tracker — Project Sanjaya")
 st.markdown("Live trip tracking with automated flight detection and multi-segment journey support.")
 
 # --- Auto-refresh for active monitoring ---
-trip_info = load_json(TRIP_INFO_FILE)
+trip_info = load_json_from_backend("trip_info")
 if not trip_info or trip_info.get("trip_status") == "active":
     st_autorefresh(interval=20 * 1000, key="dashboard_refresh")
 
-# --- Data Loading ---
-trip_log = load_json(TRIP_LOG_FILE)
+trip_log = load_json_from_backend("trip_log")
 events = trip_log.get("events", [])
 coords = [(e["lat"], e["lon"]) for e in events if "lat" in e and "lon" in e]
 
@@ -63,27 +63,24 @@ st.sidebar.title("Trip Details")
 if not trip_info:
     st.sidebar.warning("No active trip. Start a new trip from the web link below.")
 else:
-    # Define paths to local GIFs
-    assets_path = os.path.join(os.path.dirname(__file__), 'assets')
     status_map = {
-        "active": ("Tracking Active", os.path.join(assets_path, 'online.gif')),
-        "ended": ("Trip Ended", os.path.join(assets_path, 'offline.gif')),
+        "active": ("Tracking Active", os.path.join(ASSETS_PATH, 'online.gif')),
+        "ended": ("Trip Ended", os.path.join(ASSETS_PATH, 'offline.gif')),
         "boarding": ("Boarding", None),
-        "in_flight": ("In Flight", os.path.join(assets_path, 'airplane.gif')),
-        "landed": ("Landed", os.path.join(assets_path, 'online.gif')),
-        "home": ("Home", os.path.join(assets_path, 'home.gif')),
+        "in_flight": ("In Flight", os.path.join(ASSETS_PATH, 'airplane.gif')),
+        "landed": ("Landed", os.path.join(ASSETS_PATH, 'online.gif')),
+        "home": ("Home", os.path.join(ASSETS_PATH, 'home.gif')),
         "scheduled": ("Flight Scheduled", None)
     }
 
     trip_status = trip_info.get("trip_status", "ended")
     flight_status = trip_info.get("flight_info", {}).get("status")
 
-    # Determine overall status
     display_status = trip_status
     if flight_status == 'in_flight':
         display_status = 'in_flight'
     elif trip_info.get('current_tracking_status') == 'idle' and trip_status == 'active':
-        display_status = 'ended' # Represents offline/idle state
+        display_status = 'ended'
 
     status_text, status_gif_path = status_map.get(display_status, ("Unknown", None))
 
@@ -114,23 +111,21 @@ if not coords:
     m = folium.Map(location=[20.5937, 78.9629], zoom_start=5)
 else:
     m = folium.Map(location=coords[-1], zoom_start=13, tiles="CartoDB positron")
+    dep_time = datetime.fromisoformat(flight_info['scheduled_departure'])
+    arr_time = datetime.fromisoformat(flight_info['scheduled_arrival'])
 
-    # Find pre-flight and post-flight ground coordinates
-    dep_time = datetime.fromisoformat(trip_info['flight_info']['scheduled_departure'])
-    arr_time = datetime.fromisoformat(trip_info['flight_info']['scheduled_arrival'])
-
-    pre_flight_coords = [ (e['lat'], e['lon']) for e in events if datetime.fromisoformat(e['timestamp']) < dep_time ]
-    post_flight_coords = [ (e['lat'], e['lon']) for e in events if datetime.fromisoformat(e['timestamp']) > arr_time ]
+    pre_flight_coords = [(e['lat'], e['lon']) for e in events if datetime.fromisoformat(e['timestamp']) < dep_time]
+    post_flight_coords = [(e['lat'], e['lon']) for e in events if datetime.fromisoformat(e['timestamp']) > arr_time]
 
     if pre_flight_coords:
         folium.PolyLine(pre_flight_coords, color="#3498db", weight=5, popup="Pre-Flight Path").add_to(m)
     if post_flight_coords:
         folium.PolyLine(post_flight_coords, color="#3498db", weight=5, popup="Post-Flight Path").add_to(m)
 
-    # Draw flight path between last and first ground points
     if pre_flight_coords and post_flight_coords:
         flight_path = [pre_flight_coords[-1], post_flight_coords[0]]
         folium.PolyLine(flight_path, color="#f39c12", weight=4, dash_array='10, 5', popup="Flight Path").add_to(m)
+
     folium.Marker(location=coords[0], popup="Trip Start", icon=folium.Icon(color='green', icon='play')).add_to(m)
     folium.Marker(location=coords[-1], popup=f"Last Location\n{to_ist(events[-1]['timestamp'])}", icon=folium.Icon(color='red', icon='user')).add_to(m)
     m.fit_bounds(m.get_bounds(), padding=(50, 50))
@@ -138,6 +133,7 @@ else:
 st_folium(m, width="100%", height=500)
 
 # --- Summary & Data ---
+MAP_IMAGE_FILE = os.path.join(ASSETS_PATH, "final_trip_map.png")
 if trip_info.get('trip_status') == 'ended':
     st.header("Trip Summary")
     if os.path.exists(MAP_IMAGE_FILE):
@@ -152,18 +148,15 @@ with st.expander("Show Trip Info"):
 
 # --- Sidebar Bottom ---
 st.sidebar.markdown("---")
-try:
-    public_url = sys.argv[1]
-    st.sidebar.subheader("📲 Your Public Tracking Link")
-    st.sidebar.code(public_url)
-    qr_img = qrcode.make(public_url)
-    buf = BytesIO()
-    qr_img.save(buf, format="PNG")
-    st.sidebar.image(buf, width=200, caption="Scan to open tracking page")
-except IndexError:
-    st.sidebar.warning("Tracking URL not available. Run via `run_app.py`.")
-
+PUBLIC_TRACKING_URL = os.getenv("PUBLIC_TRACKING_URL", BACKEND_URL)
+st.sidebar.subheader("📲 Your Public Tracking Link")
+st.sidebar.code(PUBLIC_TRACKING_URL)
+qr_img = qrcode.make(PUBLIC_TRACKING_URL)
+buf = BytesIO()
+qr_img.save(buf, format="PNG")
+st.sidebar.image(buf, width=200, caption="Scan to open tracking page")
 st.sidebar.markdown("---")
+
 # --- Admin Actions ---
 is_admin = st.query_params.get("a") == "neelaksh"
 
@@ -171,11 +164,10 @@ if is_admin:
     st.sidebar.subheader("Admin Actions")
     if st.sidebar.button("🗑️ Reset Trip Data"):
         try:
-            response = requests.post("http://localhost:5000/reset_trip")
+            response = requests.post(f"{BACKEND_URL}/reset_trip")
             if response.ok:
                 st.sidebar.success("Trip data has been reset!")
-                time.sleep(1)
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.sidebar.error("Failed to reset trip.")
         except requests.exceptions.ConnectionError:
