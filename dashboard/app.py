@@ -9,7 +9,7 @@ import requests
 from datetime import datetime, timezone, timedelta
 import qrcode
 from io import BytesIO
-from jules.utils import get_airport_coords # Import the new function
+
 
 # --- Page Configuration ---
 st.set_page_config(
