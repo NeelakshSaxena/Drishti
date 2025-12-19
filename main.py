@@ -79,6 +79,26 @@ def get_status():
         "flight_status": trip_info.get("flight_info", {}).get("status")
     })
 
+@app.route('/trip_info')
+def get_trip_info():
+    if os.path.exists(TRIP_INFO_PATH):
+        with open(TRIP_INFO_PATH, "r") as f:
+            try:
+                return jsonify(json.load(f))
+            except json.JSONDecodeError:
+                pass
+    return jsonify({})
+
+@app.route('/trip_log')
+def get_trip_log():
+    if os.path.exists(TRIP_LOG_PATH):
+        with open(TRIP_LOG_PATH, "r") as f:
+            try:
+                return jsonify(json.load(f))
+            except json.JSONDecodeError:
+                pass
+    return jsonify({})
+
 @app.route('/reset_trip', methods=['POST'])
 def reset_trip():
     if os.path.exists(TRIP_INFO_PATH):
