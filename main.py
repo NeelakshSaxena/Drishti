@@ -46,6 +46,7 @@ def verify_flight():
     data = request.get_json()
     airline_iata = data.get('airline_iata')
     flight_number = data.get('flight_number')
+    flight_date = data.get('flight_date') # YYYY-MM-DD
 
     if not airline_iata or not flight_number:
         return jsonify({"error": "Missing flight details"}), 400
@@ -57,6 +58,9 @@ def verify_flight():
         "flight_number": flight_number,
         "limit": 1
     }
+
+    if flight_date:
+        params["flight_date"] = flight_date
 
     try:
         # Note: AviationStack free tier might handle dates differently.
@@ -101,17 +105,28 @@ def start_trip():
     trip_id = data.get("trip_id") or str(uuid.uuid4())
 
     # Construct trip info
+    # Handle both old format (single flight) and new format (segments)
+    segments = data.get("segments", [])
+    if not segments and data.get("flight_info"):
+        # Legacy conversion
+        segments.append({
+            "type": "flight",
+            "status": "active",
+            "details": {
+                "flight_number": data.get("flight_number"),
+                "info": data.get("flight_info")
+            }
+        })
+
     trip_info = {
         "trip_id": trip_id,
         "user_name": data.get("user_name", "Traveler"),
-        "flight_number": data.get("flight_number", "Unknown"),
+        "trip_mode": data.get("trip_mode", "on_trip"),
         "trip_start_time": data.get("trip_start_time", datetime.now(timezone.utc).isoformat()),
         "trip_status": "active",
-        "flight_info": data.get("flight_info", {
-             "status": "scheduled",
-             "scheduled_departure": datetime.now(timezone.utc).isoformat(),
-             "scheduled_arrival": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
-        })
+        "segments": segments,
+        # Keep flight_info for legacy compat if needed, or derived from first active flight
+        "flight_info": data.get("flight_info", {})
     }
 
     # Save to file
@@ -128,6 +143,39 @@ def start_trip():
 
     print(f"Trip started/restored for {trip_info['user_name']}.")
     return jsonify(trip_info)
+
+@app.route('/update_segment_status', methods=['POST'])
+def update_segment_status():
+    data = request.get_json()
+    segment_index = data.get('segment_index')
+    new_status = data.get('status')
+
+    if segment_index is None or not new_status:
+         return jsonify({"error": "Missing parameters"}), 400
+
+    if not os.path.exists(TRIP_INFO_PATH):
+        return jsonify({"error": "No active trip"}), 404
+
+    with open(TRIP_INFO_PATH, "r+") as f:
+        trip_info = json.load(f)
+        segments = trip_info.get("segments", [])
+
+        if 0 <= segment_index < len(segments):
+            segments[segment_index]["status"] = new_status
+
+            # Auto-update global trip status if needed
+            if new_status == "active":
+                 # Ensure others are not active? Or allow parallel?
+                 # Usually sequential, so maybe pause others.
+                 for i, seg in enumerate(segments):
+                     if i != segment_index and seg["status"] == "active":
+                         seg["status"] = "completed" # Auto-complete previous
+
+            trip_info["segments"] = segments
+            f.seek(0); f.truncate(); json.dump(trip_info, f, indent=2)
+            return jsonify({"status": "success", "segments": segments})
+        else:
+            return jsonify({"error": "Invalid segment index"}), 400
 
 @app.route('/log', methods=['POST'])
 def log_location():

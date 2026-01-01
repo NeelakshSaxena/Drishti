@@ -88,20 +88,29 @@ else:
     if status_gif_path and os.path.exists(status_gif_path):
         st.sidebar.image(status_gif_path)
 
-    st.sidebar.info(f"**Flight Status:** {status_map.get(flight_status, ('Unknown', None))[0]}")
-
-    flight_info = trip_info.get("flight_info", {})
-    if flight_info.get("flight_duration"):
-        st.sidebar.write(f"**Est. Duration:** {flight_info['flight_duration']}")
-    if flight_info.get("time_left_to_land"):
-        st.sidebar.write(f"**Time to Land:** {flight_info['time_left_to_land']}")
-
     st.sidebar.subheader(f"👋 {trip_info.get('user_name', 'Guest')}")
-    st.sidebar.write(f"**Flight:** {trip_info.get('flight_number', 'N/A')}")
-    st.sidebar.write(f"**PNR:** {trip_info.get('pnr', 'N/A')}")
+    st.sidebar.write(f"**Trip Mode:** {trip_info.get('trip_mode', 'on_trip').replace('_', ' ').title()}")
     st.sidebar.write(f"**Trip Started:** {to_ist(trip_info.get('trip_start_time'))}")
-    if trip_info.get('trip_status') == 'ended':
-        st.sidebar.write(f"**Trip Ended:** {to_ist(trip_info.get('trip_end_time'))}")
+
+    # --- Itinerary Timeline ---
+    st.sidebar.subheader("📍 Itinerary")
+    segments = trip_info.get("segments", [])
+
+    for i, seg in enumerate(segments):
+        icon = "✈️" if seg['type'] == 'flight' else ("🚆" if seg['type'] == 'train' else "🚖")
+        status_icon = "🟢" if seg['status'] == 'active' else ("✅" if seg['status'] == 'completed' else "⚪")
+
+        details = ""
+        if seg['type'] == 'flight' and seg.get('verifiedData'):
+             f = seg['verifiedData']['flight_data']
+             details = f"{f['departure']['iata']} ➝ {f['arrival']['iata']}"
+        else:
+             details = f"{seg.get('details', {}).get('from', '?')} ➝ {seg.get('details', {}).get('to', '?')}"
+
+        st.sidebar.markdown(f"{status_icon} **{icon} {seg['type'].title()}**")
+        st.sidebar.caption(details)
+        if i < len(segments) - 1:
+            st.sidebar.markdown("⬇️")
 
 # --- Map Visualization ---
 st.header("Live Journey Map")
@@ -111,30 +120,22 @@ if not coords:
     m = folium.Map(location=[20.5937, 78.9629], zoom_start=5)
 else:
     m = folium.Map(location=coords[-1], zoom_start=13, tiles="CartoDB positron")
-    dep_time = datetime.fromisoformat(flight_info['scheduled_departure'])
-    arr_time = datetime.fromisoformat(flight_info['scheduled_arrival'])
 
-    pre_flight_coords = [(e['lat'], e['lon']) for e in events if datetime.fromisoformat(e['timestamp']) < dep_time]
-    post_flight_coords = [(e['lat'], e['lon']) for e in events if datetime.fromisoformat(e['timestamp']) > arr_time]
+    # Draw user path (blue line)
+    folium.PolyLine(coords, color="#3498db", weight=5, popup="Tracked Path").add_to(m)
 
-    if pre_flight_coords:
-        folium.PolyLine(pre_flight_coords, color="#3498db", weight=5, popup="Pre-Flight Path").add_to(m)
-    if post_flight_coords:
-        folium.PolyLine(post_flight_coords, color="#3498db", weight=5, popup="Post-Flight Path").add_to(m)
+    # Draw Scheduled Segments (if coords available)
+    segments = trip_info.get("segments", [])
+    for seg in segments:
+        if seg['type'] == 'flight' and seg.get('verifiedData'):
+            origin = seg['verifiedData']['coords']['departure']
+            dest = seg['verifiedData']['coords']['arrival']
 
-    # Draw Scheduled Flight Path if coordinates exist
-    origin_coords = flight_info.get('origin_coords')
-    dest_coords = flight_info.get('dest_coords')
-
-    if origin_coords and dest_coords:
-        folium.PolyLine([origin_coords, dest_coords], color="#f39c12", weight=3, dash_array='10, 5', popup=f"Scheduled Path: {flight_info.get('flight_number', 'Flight')}").add_to(m)
-        folium.Marker(location=origin_coords, popup="Origin Airport", icon=folium.Icon(color='blue', icon='plane', prefix='fa')).add_to(m)
-        folium.Marker(location=dest_coords, popup="Destination Airport", icon=folium.Icon(color='blue', icon='flag', prefix='fa')).add_to(m)
-
-    elif pre_flight_coords and post_flight_coords:
-        # Fallback to connecting last known points if no airport coords
-        flight_path = [pre_flight_coords[-1], post_flight_coords[0]]
-        folium.PolyLine(flight_path, color="#f39c12", weight=4, dash_array='10, 5', popup="Estimated Flight Path").add_to(m)
+            if origin and dest:
+                color = "#f39c12" if seg['status'] == 'active' else ("#2ecc71" if seg['status'] == 'completed' else "#95a5a6")
+                folium.PolyLine([origin, dest], color=color, weight=3, dash_array='10, 5', popup=f"Flight: {seg['type']}").add_to(m)
+                folium.Marker(location=origin, popup="Origin", icon=folium.Icon(color='blue', icon='plane', prefix='fa')).add_to(m)
+                folium.Marker(location=dest, popup="Dest", icon=folium.Icon(color='blue', icon='flag', prefix='fa')).add_to(m)
 
     folium.Marker(location=coords[0], popup="Trip Start", icon=folium.Icon(color='green', icon='play')).add_to(m)
     folium.Marker(location=coords[-1], popup=f"Last Location\n{to_ist(events[-1]['timestamp'])}", icon=folium.Icon(color='red', icon='user')).add_to(m)
