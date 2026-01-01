@@ -122,9 +122,19 @@ else:
     if post_flight_coords:
         folium.PolyLine(post_flight_coords, color="#3498db", weight=5, popup="Post-Flight Path").add_to(m)
 
-    if pre_flight_coords and post_flight_coords:
+    # Draw Scheduled Flight Path if coordinates exist
+    origin_coords = flight_info.get('origin_coords')
+    dest_coords = flight_info.get('dest_coords')
+
+    if origin_coords and dest_coords:
+        folium.PolyLine([origin_coords, dest_coords], color="#f39c12", weight=3, dash_array='10, 5', popup=f"Scheduled Path: {flight_info.get('flight_number', 'Flight')}").add_to(m)
+        folium.Marker(location=origin_coords, popup="Origin Airport", icon=folium.Icon(color='blue', icon='plane', prefix='fa')).add_to(m)
+        folium.Marker(location=dest_coords, popup="Destination Airport", icon=folium.Icon(color='blue', icon='flag', prefix='fa')).add_to(m)
+
+    elif pre_flight_coords and post_flight_coords:
+        # Fallback to connecting last known points if no airport coords
         flight_path = [pre_flight_coords[-1], post_flight_coords[0]]
-        folium.PolyLine(flight_path, color="#f39c12", weight=4, dash_array='10, 5', popup="Flight Path").add_to(m)
+        folium.PolyLine(flight_path, color="#f39c12", weight=4, dash_array='10, 5', popup="Estimated Flight Path").add_to(m)
 
     folium.Marker(location=coords[0], popup="Trip Start", icon=folium.Icon(color='green', icon='play')).add_to(m)
     folium.Marker(location=coords[-1], popup=f"Last Location\n{to_ist(events[-1]['timestamp'])}", icon=folium.Icon(color='red', icon='user')).add_to(m)

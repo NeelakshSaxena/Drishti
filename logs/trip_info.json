@@ -1,0 +1,20 @@
+{
+  "trip_id": "d3348667-09b0-44b4-96c8-100eb5fc4ca7",
+  "user_name": "Test User",
+  "flight_number": "KE319",
+  "trip_start_time": "2025-01-01T10:00:00Z",
+  "trip_status": "active",
+  "flight_info": {
+    "status": "scheduled",
+    "scheduled_departure": "2026-01-02T00:05:00+00:00",
+    "scheduled_arrival": "2026-01-02T02:45:00+00:00",
+    "origin_coords": [
+      37.4634593,
+      126.4417093
+    ],
+    "dest_coords": [
+      23.3882376,
+      113.3015568
+    ]
+  }
+}
