@@ -5,7 +5,7 @@ import os
 def get_flight_data():
     url = "https://api.aviationstack.com/v1/flightsFuture"
     params = {
-        "access_key": "ecc682a743872531b0ed8b8bd691b07a",
+        "access_key": "ADD YOUR KEY HERE",
         "airline_iata": "6E",
         "flight_number": "325",
         "flight_date": "2026-01-05"
