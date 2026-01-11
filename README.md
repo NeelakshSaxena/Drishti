@@ -1,4 +1,4 @@
-# 🛰️ Project Sanjaya — Jules Tracker (v2.0)
+# 🛰️ Drishti (v2.0)
 
 **A highly robust, automated, live map dashboard showing your movement from Start → Airport → Flight → Destination → Home — updating in real time and connecting dots visually.**
 
