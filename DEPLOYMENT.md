@@ -1,70 +1,56 @@
-# 🚀 Deployment Instructions (Render & Streamlit Cloud)
+# Deployment
 
-This guide provides step-by-step instructions to deploy Project Sanjaya, making it publicly accessible. We will deploy the backend to **Render** and the dashboard to **Streamlit Community Cloud**.
+## Backend: Render
 
----
+Use the root `render.yaml`, or create a Render Web Service manually with:
 
-### Part 1: Deploying the Backend to Render
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 10000
+```
 
-Render will host our Python backend and provide a public URL for the tracking web page.
+Render settings:
 
-1.  **Sign Up & Connect GitHub:**
-    *   Create a free account on [render.com](https://render.com).
-    *   Connect your GitHub account and authorize it to access the `project_sanjaya` repository.
+- Root directory: `backend`
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port 10000`
 
-2.  **Create a New Web Service:**
-    *   From your Render Dashboard, click **New +** -> **Web Service**.
-    *   Select your `project_sanjaya` repository.
-    *   Give your service a unique name (e.g., `sanjaya-tracker-backend`).
+Environment variables:
 
-3.  **Configure the Service:**
-    *   **Region:** Choose a region close to you.
-    *   **Branch:** Select your main branch (e.g., `main` or `master`).
-    *   **Build Command:** `pip install -r project_sanjaya/requirements.txt`
-    *   **Start Command:** `waitress-serve --host=0.0.0.0 --port=$PORT main:app`
-        *   *Note: Render automatically sets the `$PORT` environment variable.*
+```text
+CORS_ORIGINS=https://your-vercel-app.vercel.app
+AVIATION_STACK_KEY=your_aviationstack_key
+```
 
-4.  **Add Environment Variables:**
-    *   Before the first deployment, go to the **Environment** tab.
-    *   Under "Secret Files", click **Add Secret File**.
-    *   **Filename:** `project_sanjaya/.env`
-    *   **Contents:**
-        ```
-        AVIATIONSTACK_KEY=YOUR_KEY_HERE
-        ```
-        (Replace with your actual AviationStack API key).
+After deploy, verify:
 
-5.  **Deploy:**
-    *   Click **Create Web Service**. Render will build and deploy your application.
-    *   Once it's live, copy the public URL provided (e.g., `https://sanjaya-tracker-backend.onrender.com`). This is your **Backend URL**.
+```text
+https://your-render-service.onrender.com/docs
+```
 
----
+## Frontend: Vercel
 
-### Part 2: Deploying the Dashboard to Streamlit Cloud
+Import the repo into Vercel and set:
 
-Streamlit Community Cloud is the best place to host our dashboard.
+- Root directory: `frontend`
+- Framework preset: Next.js
+- Build command: `npm run build`
+- Output directory: `.next`
 
-1.  **Sign Up & Connect GitHub:**
-    *   Create a free account at [streamlit.io/cloud](https://streamlit.io/cloud).
-    *   Connect the same GitHub repository.
+Environment variable:
 
-2.  **Deploy the App:**
-    *   From your workspace, click **New app**.
-    *   Select your repository and branch.
-    *   Set the **Main file path** to `project_sanjaya/dashboard/app.py`.
-    *   Give your app a custom URL (e.g., `my-sanjaya-dashboard`).
+```text
+NEXT_PUBLIC_API_BASE_URL=https://your-render-service.onrender.com
+```
 
-3.  **Add the Backend URL as a Secret:**
-    *   In the "Advanced settings" section, add the following secret:
-        *   **Key:** `BACKEND_URL`
-        *   **Value:** Your **Backend URL** from Render (e.g., `https://sanjaya-tracker-backend.onrender.com`)
+After Vercel gives you a production URL, add it to the Render backend:
 
-4.  **Deploy:**
-    *   Click **Deploy!**. Your dashboard will be live in a few minutes.
+```text
+CORS_ORIGINS=https://your-vercel-app.vercel.app
+```
 
----
+## Final Check
 
-### Final Workflow
-
-*   To start a new trip, go to your **Render Backend URL**.
-*   To view the live dashboard, go to your **Streamlit Cloud URL**. The "Reset Trip" button on the dashboard will now correctly communicate with your deployed backend.
+1. Open the Vercel URL.
+2. Submit the trip form.
+3. Confirm the Results panel updates.
+4. Confirm the browser console has no CORS errors.
