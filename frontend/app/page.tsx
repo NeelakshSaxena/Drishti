@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Moon, Sun, Map } from "lucide-react";
+import { LayoutDashboard, Moon, Settings, Sun, Map } from "lucide-react";
 import { HealthIndicator } from "@/components/HealthIndicator";
 import { ParentDashboard } from "@/components/ParentDashboard";
 import { ChildPanel } from "@/components/ChildPanel";
 import { MapView } from "@/components/MapView";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { Child } from "@/lib/api";
 import { UI_CONFIG } from "@/lib/constants";
+import { getStoredBackendUrl } from "@/lib/settings";
 
 /**
  * Main dashboard page
@@ -17,6 +19,8 @@ import { UI_CONFIG } from "@/lib/constants";
 export default function Home() {
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [darkMode, setDarkMode] = useState(false);
+  const [viewMode, setViewMode] = useState<"dashboard" | "settings">("dashboard");
+  const [backendUrl, setBackendUrl] = useState(() => getStoredBackendUrl());
 
   // Apply dark mode to document root
   useEffect(() => {
@@ -42,8 +46,39 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <HealthIndicator autoRefresh interval={UI_CONFIG.AUTO_REFRESH_INTERVAL} />
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("dashboard")}
+                  className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                    viewMode === "dashboard"
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50"
+                  }`}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("settings")}
+                  className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                    viewMode === "settings"
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50"
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </button>
+              </div>
+
+              <HealthIndicator
+                autoRefresh
+                interval={UI_CONFIG.AUTO_REFRESH_INTERVAL}
+                refreshKey={backendUrl}
+              />
 
               <button
                 onClick={() => setDarkMode(!darkMode)}
@@ -62,7 +97,15 @@ export default function Home() {
 
         {/* Main Content */}
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          {selectedChild ? (
+          {viewMode === "settings" ? (
+            <div className="mx-auto max-w-3xl">
+              <SettingsPanel
+                onBackendUrlSaved={(savedUrl) => {
+                  setBackendUrl(savedUrl);
+                }}
+              />
+            </div>
+          ) : selectedChild ? (
             // Child Detail View
             <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
               <div>

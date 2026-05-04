@@ -7,11 +7,13 @@ import { healthCheck, type HealthCheckResponse } from "@/lib/api";
 type HealthIndicatorProps = {
   autoRefresh?: boolean;
   interval?: number;
+  refreshKey?: string;
 };
 
 export function HealthIndicator({
   autoRefresh = true,
   interval = 15000,
+  refreshKey,
 }: HealthIndicatorProps) {
   const [health, setHealth] = useState<HealthCheckResponse | null>(null);
   const [isChecking, setIsChecking] = useState(true);
@@ -40,7 +42,7 @@ export function HealthIndicator({
       const timer = setInterval(checkHealth, interval);
       return () => clearInterval(timer);
     }
-  }, [autoRefresh, interval]);
+  }, [autoRefresh, interval, refreshKey]);
 
   if (!health) {
     return (

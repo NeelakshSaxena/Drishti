@@ -1,6 +1,13 @@
 import { API_CONFIG, ENDPOINTS, ERROR_MESSAGES, SUCCESS_MESSAGES } from "./constants";
+import { getStoredBackendUrl } from "./settings";
 
-const API_BASE_URL = API_CONFIG.BASE_URL.replace(/\/$/, "");
+function getApiBaseUrl(): string {
+  return getStoredBackendUrl();
+}
+
+function buildApiUrl(path: string): string {
+  return `${getApiBaseUrl()}${path}`;
+}
 
 /**
  * Parses error response and returns appropriate message
@@ -75,7 +82,7 @@ export type HealthCheckResponse = {
  */
 export async function healthCheck(): Promise<HealthCheckResponse> {
   try {
-    const response = await fetchWithRetry(`${API_BASE_URL}${ENDPOINTS.HEALTH}`, {
+    const response = await fetchWithRetry(buildApiUrl(ENDPOINTS.HEALTH), {
       method: "GET",
     });
     return response.json();
@@ -119,7 +126,7 @@ export async function createChild(name: string): Promise<Child> {
 
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}${ENDPOINTS.CREATE_CHILD}`,
+      buildApiUrl(ENDPOINTS.CREATE_CHILD),
       {
         method: "POST",
         body: JSON.stringify({ name: name.trim() }),
@@ -139,7 +146,7 @@ export async function createChild(name: string): Promise<Child> {
 export async function getChildren(): Promise<Child[]> {
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}${ENDPOINTS.CHILDREN}`,
+      buildApiUrl(ENDPOINTS.CHILDREN),
       { method: "GET" },
     );
     return response.json();
@@ -161,7 +168,7 @@ export async function getChildDetails(childId: string): Promise<Child> {
 
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}${ENDPOINTS.GET_CHILD}/${childId}`,
+      buildApiUrl(`${ENDPOINTS.GET_CHILD}/${childId}`),
       { method: "GET" },
     );
     return response.json();
@@ -233,7 +240,7 @@ export async function startTrip(
 
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}/child/${childId}/trip/start`,
+      buildApiUrl(`/child/${childId}/trip/start`),
       {
         method: "POST",
         body: JSON.stringify(request || {}),
@@ -259,7 +266,7 @@ export async function endTrip(childId: string): Promise<Trip> {
 
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}/child/${childId}/trip/end`,
+      buildApiUrl(`/child/${childId}/trip/end`),
       { method: "POST" },
     );
     const data = await response.json();
@@ -285,7 +292,7 @@ export async function addEvent(tripId: string, event: EventRequest): Promise<Eve
 
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}/trip/${tripId}/event/add`,
+      buildApiUrl(`/trip/${tripId}/event/add`),
       {
         method: "POST",
         body: JSON.stringify(event),
@@ -315,7 +322,7 @@ export async function nextEvent(tripId: string): Promise<{
 
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}/trip/${tripId}/event/next`,
+      buildApiUrl(`/trip/${tripId}/event/next`),
       { method: "POST" },
     );
     return response.json();
@@ -369,7 +376,7 @@ export async function updateLocation(
 
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}/child/${childId}/location/update`,
+      buildApiUrl(`/child/${childId}/location/update`),
       {
         method: "POST",
         body: JSON.stringify({ lat, lng }),
@@ -416,7 +423,7 @@ export async function startTripLegacy(
   payload: StartTripPayload,
 ): Promise<StartTripResponse> {
   const response = await fetchWithRetry(
-    `${API_BASE_URL}/process/start-trip`,
+    buildApiUrl(`/process/start-trip`),
     {
       method: "POST",
       body: JSON.stringify(payload),
