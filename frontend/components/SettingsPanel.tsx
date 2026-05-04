@@ -159,7 +159,6 @@ export function SettingsPanel({ onBackendUrlSaved }: SettingsPanelProps) {
             </div>
           )}
         </div>
-        </div>
       </div>
     </div>
   );
