@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_CORS_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://drishti-phi.vercel.app",
     "https://*.vercel.app",
     "https://vercel.app",
 ]

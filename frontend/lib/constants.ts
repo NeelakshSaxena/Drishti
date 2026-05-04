@@ -3,8 +3,15 @@
  */
 
 // API Configuration
+const LOCAL_API_BASE_URL = "http://127.0.0.1:8000";
+const PRODUCTION_API_BASE_URL = "https://drishti-walb.onrender.com";
+
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000",
+  BASE_URL:
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    (process.env.NODE_ENV === "production"
+      ? PRODUCTION_API_BASE_URL
+      : LOCAL_API_BASE_URL),
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // ms
 } as const;
