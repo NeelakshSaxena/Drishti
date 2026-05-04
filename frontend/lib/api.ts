@@ -25,7 +25,7 @@ function parseErrorMessage(error: unknown): string {
 async function fetchWithRetry(
   url: string,
   options: RequestInit = {},
-  attempts = API_CONFIG.RETRY_ATTEMPTS,
+  attempts: number = API_CONFIG.RETRY_ATTEMPTS,
 ): Promise<Response> {
   try {
     const response = await fetch(url, {

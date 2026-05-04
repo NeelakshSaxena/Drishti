@@ -51,7 +51,9 @@ export function validateEvent(from: string, to: string, type: string): void {
     throw new Error(ERROR_MESSAGES.EVENT_DETAILS_INCOMPLETE);
   }
 
-  if (!FORM_CONSTRAINTS.EVENT_TYPE_OPTIONS.includes(type)) {
+  const eventTypeOptions = FORM_CONSTRAINTS.EVENT_TYPE_OPTIONS as readonly string[];
+
+  if (!eventTypeOptions.includes(type)) {
     throw new Error(
       `Event type must be one of: ${FORM_CONSTRAINTS.EVENT_TYPE_OPTIONS.join(", ")}`
     );

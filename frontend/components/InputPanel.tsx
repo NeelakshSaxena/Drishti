@@ -136,39 +136,3 @@ function NumberField({
     </label>
   );
 }
-
-        <button
-          type="button"
-          data-testid="start-trip-button"
-          onClick={handleSubmit}
-          disabled={isLoading || !userName.trim()}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
-        >
-          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {isLoading ? "Sending..." : "Start trip"}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-type NumberFieldProps = {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-};
-
-function NumberField({ label, value, onChange }: NumberFieldProps) {
-  return (
-    <label className="block text-sm font-medium text-zinc-700">
-      {label}
-      <input
-        type="number"
-        step="any"
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-1.5 h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-      />
-    </label>
-  );
-}

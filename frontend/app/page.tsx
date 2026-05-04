@@ -106,41 +106,42 @@ export default function Home() {
                       </ul>
                     </div>
 
-                  <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
-                    <p className="font-medium text-slate-900 dark:text-slate-50 mb-2">
-                      Event Types:
-                    </p>
-                    <div className="grid grid-cols-2 gap-1 text-xs">
-                      {[
-                        "Flight",
-                        "Train",
-                        "Bus",
-                        "Car",
-                        "Hostel",
-                        "Hotel",
-                      ].map((type) => (
-                        <div
-                          key={type}
-                          className="px-2 py-1 rounded bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                        >
-                          {type}
-                        </div>
-                      ))}
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
+                      <p className="font-medium text-slate-900 dark:text-slate-50 mb-2">
+                        Event Types:
+                      </p>
+                      <div className="grid grid-cols-2 gap-1 text-xs">
+                        {[
+                          "Flight",
+                          "Train",
+                          "Bus",
+                          "Car",
+                          "Hostel",
+                          "Hotel",
+                        ].map((type) => (
+                          <div
+                            key={type}
+                            className="px-2 py-1 rounded bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                          >
+                            {type}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-900/20 p-3">
-                    <p className="text-emerald-900 dark:text-emerald-300 text-xs">
-                      ✓ All data is saved automatically. Changes sync with the
-                      backend every 15 seconds.
-                    </p>
+                    <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-900/20 p-3">
+                      <p className="text-emerald-900 dark:text-emerald-300 text-xs">
+                        ✓ All data is saved automatically. Changes sync with the
+                        backend every 15 seconds.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-    </main>
+          )}
+        </div>
+      </main>
+    </ErrorBoundary>
   );
 }
