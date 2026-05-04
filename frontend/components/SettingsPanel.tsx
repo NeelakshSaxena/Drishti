@@ -18,6 +18,8 @@ export function SettingsPanel({ onBackendUrlSaved }: SettingsPanelProps) {
   const [backendUrl, setBackendUrl] = useState(getStoredBackendUrl());
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   useEffect(() => {
     setBackendUrl(getStoredBackendUrl());
@@ -123,6 +125,40 @@ export function SettingsPanel({ onBackendUrlSaved }: SettingsPanelProps) {
             <RotateCcw className="h-4 w-4" />
             Reset default
           </button>
+        </div>
+
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={async () => {
+              setTesting(true);
+              setTestResult(null);
+              setError(null);
+              try {
+                const url = (backendUrl || getDefaultBackendUrl()).replace(/\/+$/, "") + "/health";
+                const resp = await fetch(url, { method: "GET" });
+                if (!resp.ok) {
+                  setTestResult(`HTTP ${resp.status} - ${resp.statusText}`);
+                } else {
+                  const data = await resp.json();
+                  setTestResult(JSON.stringify(data));
+                }
+              } catch (err: any) {
+                setError(err?.message || String(err));
+              } finally {
+                setTesting(false);
+              }
+            }}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
+            {testing ? "Testing..." : "Test connection"}
+          </button>
+          {testResult && (
+            <div className="mt-3 rounded-md bg-slate-50 dark:bg-slate-800 p-3 text-xs">
+              <pre className="whitespace-pre-wrap break-words">{testResult}</pre>
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </div>
