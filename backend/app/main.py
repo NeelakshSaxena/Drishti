@@ -18,55 +18,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DEFAULT_CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://drishti-phi.vercel.app",
-    "https://*.vercel.app",
-    "https://vercel.app",
-]
-
-
-def get_cors_origins():
-    origins = os.getenv("CORS_ORIGINS")
-    if not origins:
-        return DEFAULT_CORS_ORIGINS
-    return [origin.strip() for origin in origins.split(",") if origin.strip()]
-
-
 app = FastAPI(
     title="Drishti API",
     version="0.1.0",
-    description="API layer over the Drishti service layer.",
+    description="Family trip tracking API.",
 )
 
-# Support wildcard-style origins (e.g. https://*.vercel.app) by converting
-# them into a combined regex passed to `allow_origin_regex`. Exact origins
-# are passed to `allow_origins` as before.
-cors_origins = get_cors_origins()
-# Build a combined regex that covers both exact origins and wildcard patterns.
-regex_parts = []
-for pattern in cors_origins:
-    # Escape dots and other regex characters, then convert '*' to '.*'
-    # We escape common regex metacharacters first, then replace the literal '*' with '.*'
-    p = pattern
-    # Escape regex special chars except '*'
-    for ch in ".^$+?{}[]|()":
-        p = p.replace(ch, f"\\{ch}")
-    p = p.replace("*", ".*")
-    if not p.startswith("^"):
-        p = f"^{p}$"
-    regex_parts.append(p)
-
-allow_origin_regex = None
-if regex_parts:
-    allow_origin_regex = "|".join(regex_parts)
+# Allow all origins so the Vercel frontend can reach the Render backend.
+# Restrict to specific origins via the CORS_ORIGINS env var on Render if needed.
+allowed_origins_env = os.getenv("CORS_ORIGINS", "")
+if allowed_origins_env:
+    allow_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+    allow_credentials = True
+else:
+    allow_origins = ["*"]
+    allow_credentials = False  # wildcard + credentials is not allowed by spec
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[],
-    allow_origin_regex=allow_origin_regex,
-    allow_credentials=True,
+    allow_origins=allow_origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

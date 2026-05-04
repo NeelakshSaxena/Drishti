@@ -45,8 +45,10 @@ class Trip(BaseModel):
 # Child models
 class Child(BaseModel):
     id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
+    name: str | None = None  # Optional display name
     child_code: str  # Unique 6-8 char code for parent linking
     parent_id: str | None = None  # Linked parent ID
+    active_trip_id: str | None = None
     current_trip: Trip | None = None
     trip_history: list[Trip] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)

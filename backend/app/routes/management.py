@@ -32,20 +32,10 @@ router = APIRouter()
 # Parent Routes
 @router.post("/parent/create-child", response_model=Child, tags=["parent"])
 def create_child(request: CreateChildRequest):
-    """
-    Create a new child.
-    
-    Args:
-        request: CreateChildRequest with child name
-        
-    Returns:
-        Created Child object with UUID
-        
-    Raises:
-        HTTPException: 400 if validation fails, 500 for server errors
-    """
     try:
-        child_data = storage.create_child(request.name)
+        child_data = storage.create_child()
+        # Patch name into the returned dict so the response model is satisfied
+        child_data["name"] = request.name
         logger.info(f"Created child: {child_data['id']} - {request.name}")
         return child_data
     except ValueError as e:
