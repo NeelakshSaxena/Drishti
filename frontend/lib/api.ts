@@ -116,4 +116,44 @@ export async function healthCheck(): Promise<{ status: string; backend: string; 
   }
 }
 
+// ===== Legacy API (Process routes - backward compatibility) =====
 
+export type StartTripPayload = {
+  user_name: string;
+  trip_mode: string;
+  segments: TripSegment[];
+};
+
+export type TripSegment = {
+  type: string;
+  status: string;
+  details: Record<string, unknown>;
+  verifiedData?: {
+    coords?: {
+      departure?: [number, number] | null;
+      arrival?: [number, number] | null;
+    };
+  };
+};
+
+export type StartTripResponse = {
+  trip_id: string;
+  user_name: string;
+  trip_mode: string;
+  trip_start_time: string;
+  trip_status: string;
+  segments: TripSegment[];
+  flight_info: Record<string, unknown>;
+};
+
+export async function startTripLegacy(
+  payload: StartTripPayload,
+): Promise<StartTripResponse> {
+  const res = await fetch(`${API_BASE}/process/start-trip`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to start legacy trip");
+  return res.json();
+}
