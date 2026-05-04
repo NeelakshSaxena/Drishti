@@ -1,11 +1,12 @@
 "use client";
 
+import type { StyleSpecification } from "maplibre-gl";
 import { Map, MapMarker, MarkerContent } from "@/components/ui/map";
 import type { StartTripResponse, TripSegment } from "@/lib/api";
 
 const DEFAULT_CENTER: [number, number] = [77.209, 28.6139];
 const DEFAULT_ZOOM = 10;
-const OSM_STYLE = {
+const OSM_STYLE: StyleSpecification = {
   version: 8,
   sources: {
     osm: {
@@ -22,7 +23,7 @@ const OSM_STYLE = {
       source: "osm",
     },
   ],
-} as const;
+};
 
 type MapPoint = {
   id: string;
