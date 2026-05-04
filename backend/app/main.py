@@ -40,9 +40,29 @@ app = FastAPI(
     description="API layer over the Drishti service layer.",
 )
 
+# Support wildcard-style origins (e.g. https://*.vercel.app) by converting
+# them into a combined regex passed to `allow_origin_regex`. Exact origins
+# are passed to `allow_origins` as before.
+cors_origins = get_cors_origins()
+exact_origins = [o for o in cors_origins if "*" not in o]
+wildcard_origins = [o for o in cors_origins if "*" in o]
+allow_origin_regex = None
+if wildcard_origins:
+    # Convert wildcard patterns into regex fragments, then join with |
+    regex_parts = []
+    for pattern in wildcard_origins:
+        # Escape dots and replace '*' with '.*'
+        p = pattern.replace(".", r"\.").replace("*", ".*")
+        # Ensure we match the full origin
+        if not p.startswith("^"):
+            p = f"^{p}$"
+        regex_parts.append(p)
+    allow_origin_regex = "|".join(regex_parts)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_cors_origins(),
+    allow_origins=exact_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
