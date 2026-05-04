@@ -8,22 +8,22 @@ type ResultsPanelProps = {
 
 export function ResultsPanel({ data, error }: ResultsPanelProps) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm sm:p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold">Results</h2>
-        <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">Results</h2>
+        <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-400">
           API response
         </span>
       </div>
 
       {error ? (
-        <div className="mt-4 flex gap-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="mt-4 flex gap-3 rounded-md border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>{error}</p>
         </div>
       ) : data ? (
         <div className="mt-4 space-y-3 text-sm">
-          <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800">
+          <div className="flex items-center gap-2 rounded-md border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/20 px-3 py-2 text-green-800 dark:text-green-300">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span className="font-medium capitalize">{data.trip_status}</span>
           </div>
@@ -32,7 +32,7 @@ export function ResultsPanel({ data, error }: ResultsPanelProps) {
           <ResultRow label="Trip ID" value={data.trip_id} wrap />
         </div>
       ) : (
-        <div className="mt-4 flex gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-500">
+        <div className="mt-4 flex gap-3 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 text-sm text-slate-500 dark:text-slate-400">
           <Clock3 className="mt-0.5 h-4 w-4 shrink-0" />
           <p>No response yet.</p>
         </div>
@@ -49,10 +49,10 @@ type ResultRowProps = {
 
 function ResultRow({ label, value, wrap = false }: ResultRowProps) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-white px-3 py-2">
-      <p className="text-xs font-medium uppercase text-zinc-500">{label}</p>
+    <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 px-3 py-2">
+      <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{label}</p>
       <p
-        className={`mt-1 font-medium text-zinc-900 ${wrap ? "break-all" : "capitalize"}`}
+        className={`mt-1 font-medium text-slate-900 dark:text-slate-50 ${wrap ? "break-all" : "capitalize"}`}
       >
         {value}
       </p>

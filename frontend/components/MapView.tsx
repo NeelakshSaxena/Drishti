@@ -40,7 +40,7 @@ export function MapView({ data }: MapViewProps) {
   const center = getMapCenter(points);
 
   return (
-    <div className="relative h-full min-h-[500px] overflow-hidden rounded-md bg-zinc-100">
+    <div className="relative h-full min-h-[500px] overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800">
       <Map
         key={`${center[0]}-${center[1]}-${points.length}`}
         className="h-full min-h-[500px]"
@@ -64,7 +64,7 @@ export function MapView({ data }: MapViewProps) {
           </MapMarker>
         ))}
       </Map>
-      <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-zinc-200 bg-white/95 px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm">
+      <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm">
         {points.length > 0 ? `${points.length} route points` : "Awaiting route"}
       </div>
     </div>
