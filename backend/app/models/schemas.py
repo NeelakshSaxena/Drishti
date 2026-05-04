@@ -30,8 +30,7 @@ class TripEvent(BaseModel):
     description: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {"populate_by_name": True}
 
 
 # Trip models
@@ -94,4 +93,50 @@ class ParentDashboardResponse(BaseModel):
 class HealthCheckResponse(BaseModel):
     status: str = "ok"
     backend: str = "running"
-    services: dict[str, str] = {"api": "up"}
+    services: dict = {"api": True}
+    errors: list[str] = []
+
+
+# ===== Management route schemas =====
+
+class CreateChildRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+
+
+class AddEventRequest(BaseModel):
+    type: str = Field(..., description="flight, train, bus, car, hostel, hotel, custom")
+    from_location: str | None = Field(None, alias="from")
+    to_location: str | None = Field(None, alias="to")
+    from_field: str | None = Field(None)
+    to_field: str | None = Field(None)
+    time: str | None = None
+    ticket_url: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+class StartTripChildRequest(BaseModel):
+    events: list[AddEventRequest] = []
+
+
+class LocationUpdate(BaseModel):
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+
+
+# ===== Process route schemas (legacy) =====
+
+class VerifyFlightRequest(BaseModel):
+    airline_iata: str
+    flight_number: str
+    flight_date: str | None = None
+
+
+class UpdateSegmentStatusRequest(BaseModel):
+    segment_index: int
+    status: str
+
+
+class LogLocationRequest(BaseModel):
+    lat: float
+    lon: float
