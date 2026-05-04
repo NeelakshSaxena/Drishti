@@ -1,287 +1,121 @@
-import { API_CONFIG, ENDPOINTS, ERROR_MESSAGES, SUCCESS_MESSAGES } from "./constants";
-import { getStoredBackendUrl } from "./settings";
+/* Family tracking API client */
 
-function getApiBaseUrl(): string {
-  return getStoredBackendUrl();
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-function buildApiUrl(path: string): string {
-  return `${getApiBaseUrl()}${path}`;
-}
-
-/**
- * Parses error response and returns appropriate message
- */
-function parseErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === "string") {
-    return error;
-  }
-  return ERROR_MESSAGES.SERVER_ERROR;
-}
-
-/**
- * Fetches with automatic retry logic for failed requests
- * @param url - API endpoint URL
- * @param options - Fetch options
- * @param attempts - Number of retry attempts remaining
- * @throws Error with descriptive message
- */
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit = {},
-  attempts: number = API_CONFIG.RETRY_ATTEMPTS,
-): Promise<Response> {
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      let message: string;
-      try {
-        const data = await response.json();
-        message = data.detail || `Request failed with status ${response.status}`;
-      } catch {
-        message = `Request failed with status ${response.status}`;
-      }
-      throw new Error(message);
-    }
-
-    return response;
-  } catch (error) {
-    if (attempts > 1) {
-      await new Promise((resolve) => setTimeout(resolve, API_CONFIG.RETRY_DELAY));
-      return fetchWithRetry(url, options, attempts - 1);
-    }
-    throw error;
-  }
-}
-
-// ===== Health Check =====
-
-export type HealthCheckResponse = {
-  status: "ok" | "degraded" | "error";
-  backend: string;
-  services: {
-    api: boolean;
-    memory_store: boolean;
-  };
-  errors: string[];
-};
-
-/**
- * Checks backend health status with retry logic
- * @returns Health status or degraded if unreachable
- */
-export async function healthCheck(): Promise<HealthCheckResponse> {
-  try {
-    const response = await fetchWithRetry(buildApiUrl(ENDPOINTS.HEALTH), {
-      method: "GET",
-    });
-    return response.json();
-  } catch {
-    return {
-      status: "error",
-      backend: "unreachable",
-      services: { api: false, memory_store: false },
-      errors: [ERROR_MESSAGES.NETWORK_ERROR],
-    };
-  }
-}
-
-// ===== Child Management =====
-
-export type Child = {
+export interface Child {
   id: string;
-  name: string;
-  active_trip_id: string | null;
+  child_code: string;
+  parent_id: string | null;
+  current_trip: Trip | null;
+  trip_history: Trip[];
   created_at: string;
-};
-
-export type CreateChildRequest = {
-  name: string;
-};
-
-/**
- * Creates a new child
- * @param name - Child's name
- * @throws Error if name is empty or request fails
- * @returns Created child object
- */
-export async function createChild(name: string): Promise<Child> {
-  if (!name || !name.trim()) {
-    throw new Error(ERROR_MESSAGES.CHILD_NAME_REQUIRED);
-  }
-
-  if (name.length > 50) {
-    throw new Error(ERROR_MESSAGES.CHILD_NAME_TOO_LONG);
-  }
-
-  try {
-    const response = await fetchWithRetry(
-      buildApiUrl(ENDPOINTS.CREATE_CHILD),
-      {
-        method: "POST",
-        body: JSON.stringify({ name: name.trim() }),
-      },
-    );
-    return response.json();
-  } catch (error) {
-    throw new Error(parseErrorMessage(error));
-  }
 }
 
-/**
- * Fetches all children
- * @throws Error if request fails
- * @returns Array of children
- */
-export async function getChildren(): Promise<Child[]> {
-  try {
-    const response = await fetchWithRetry(
-      buildApiUrl(ENDPOINTS.CHILDREN),
-      { method: "GET" },
-    );
-    return response.json();
-  } catch (error) {
-    throw new Error(parseErrorMessage(error));
-  }
-}
-
-/**
- * Fetches specific child details
- * @param childId - Child ID
- * @throws Error if not found or request fails
- * @returns Child object
- */
-export async function getChildDetails(childId: string): Promise<Child> {
-  if (!childId) {
-    throw new Error("Child ID is required");
-  }
-
-  try {
-    const response = await fetchWithRetry(
-      buildApiUrl(`${ENDPOINTS.GET_CHILD}/${childId}`),
-      { method: "GET" },
-    );
-    return response.json();
-  } catch (error) {
-    throw new Error(parseErrorMessage(error));
-  }
-}
-
-// ===== Event Management =====
-
-export type Event = {
-  id?: string;
-  type: string;
-  from: string;
-  to: string;
-  time?: string;
-  ticket_url?: string;
-  status: "upcoming" | "current" | "completed";
-};
-
-export type EventRequest = {
-  type: string;
-  from: string;
-  to: string;
-  time?: string;
-  ticket_url?: string;
-};
-
-/**
- * Validates event data
- * @throws Error if validation fails
- */
-function validateEvent(event: EventRequest): void {
-  if (!event.from?.trim() || !event.to?.trim()) {
-    throw new Error(ERROR_MESSAGES.EVENT_DETAILS_INCOMPLETE);
-  }
-}
-
-// ===== Trip Management =====
-
-export type Trip = {
+export interface Parent {
   id: string;
-  child_id: string;
+  linked_children: string[];
+  created_at: string;
+}
+
+export interface Trip {
+  id: string;
+  events: TripEvent[];
   status: "active" | "ended";
-  current_event_index: number;
-  events: Event[];
+  started_at: string;
+  ended_at: string | null;
+}
+
+export interface TripEvent {
+  id: string;
+  type: string; // flight, train, bus, hostel, custom
+  from_location: string;
+  to_location: string;
+  time?: string;
+  description: string;
   created_at: string;
-  updated_at: string;
-};
+}
 
-export type StartTripRequest = {
-  events?: EventRequest[];
-};
+// Child Endpoints
+export async function initChild(): Promise<{ success: boolean; child_id: string; child_code: string }> {
+  const res = await fetch(`${API_BASE}/family/child/init`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to init child");
+  return res.json();
+}
 
-/**
- * Starts a new trip for a child
- * @param childId - Child ID
- * @param request - Optional trip with initial events
- * @throws Error if child not found or already on trip
- * @returns Created trip object
- */
-export async function startTrip(
+export async function getChildDashboard(childId: string): Promise<{ child: Child; current_trip: Trip | null; trip_history: Trip[] }> {
+  const res = await fetch(`${API_BASE}/family/child/dashboard?child_id=${childId}`);
+  if (!res.ok) throw new Error("Failed to get child dashboard");
+  return res.json();
+}
+
+export async function startTrip(childId: string): Promise<{ success: boolean; trip: Trip }> {
+  const res = await fetch(`${API_BASE}/family/child/trip/start?child_id=${childId}`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to start trip");
+  return res.json();
+}
+
+export async function addEventToTrip(
   childId: string,
-  request?: StartTripRequest,
-): Promise<Trip> {
-  if (!childId) {
-    throw new Error("Child ID is required");
+  event: {
+    type: string;
+    from_location: string;
+    to_location: string;
+    time?: string;
+    description?: string;
   }
+): Promise<{ success: boolean; event: TripEvent }> {
+  const res = await fetch(`${API_BASE}/family/child/trip/event?child_id=${childId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+  });
+  if (!res.ok) throw new Error("Failed to add event");
+  return res.json();
+}
 
+export async function endTrip(childId: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_BASE}/family/child/trip/end?child_id=${childId}`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to end trip");
+  return res.json();
+}
+
+// Parent Endpoints
+export async function initParent(): Promise<{ success: boolean; parent_id: string }> {
+  const res = await fetch(`${API_BASE}/family/parent/init`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to init parent");
+  return res.json();
+}
+
+export async function linkChild(parentId: string, childCode: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/family/parent/link-child?parent_id=${parentId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ child_code: childCode }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to link child");
+  }
+  return res.json();
+}
+
+export async function getParentDashboard(parentId: string): Promise<{ parent: Parent; linked_children: Child[] }> {
+  const res = await fetch(`${API_BASE}/family/parent/dashboard?parent_id=${parentId}`);
+  if (!res.ok) throw new Error("Failed to get parent dashboard");
+  return res.json();
+}
+
+// Health Check
+export async function healthCheck(): Promise<{ status: string; backend: string; services: Record<string, string> }> {
   try {
-    const response = await fetchWithRetry(
-      buildApiUrl(`/child/${childId}/trip/start`),
-      {
-        method: "POST",
-        body: JSON.stringify(request || {}),
-      },
-    );
-    const data = await response.json();
-    return data.trip;
+    const res = await fetch(`${API_BASE}/family/health`);
+    if (!res.ok) throw new Error("Health check failed");
+    return res.json();
   } catch (error) {
-    throw new Error(parseErrorMessage(error));
+    return { status: "error", backend: "offline", services: { api: "down" } };
   }
 }
 
-/**
- * Ends active trip for a child
- * @param childId - Child ID
- * @throws Error if no active trip or request fails
- * @returns Ended trip object
- */
-export async function endTrip(childId: string): Promise<Trip> {
-  if (!childId) {
-    throw new Error("Child ID is required");
-  }
-
-  try {
-    const response = await fetchWithRetry(
-      buildApiUrl(`/child/${childId}/trip/end`),
-      { method: "POST" },
-    );
-    const data = await response.json();
-    return data.trip;
-  } catch (error) {
-    throw new Error(parseErrorMessage(error));
-  }
-}
-
-/**
- * Adds an event to a trip
- * @param tripId - Trip ID
- * @param event - Event details
- * @throws Error if validation fails or request fails
- * @returns Created event object
  */
 export async function addEvent(tripId: string, event: EventRequest): Promise<Event> {
   if (!tripId) {

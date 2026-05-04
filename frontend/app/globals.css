@@ -6,10 +6,15 @@
   box-sizing: border-box;
 }
 
+html {
+  background-color: #0a0a0a;
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
-  background: #fafafa;
-  color: #09090b;
+  background: #0a0a0a;
+  color: #f5f5f5;
 }
 
 @layer base {
@@ -24,5 +29,22 @@ body {
   }
   .maplibregl-popup-tip {
     @apply hidden!;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #505050;
   }
 }

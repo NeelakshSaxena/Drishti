@@ -5,7 +5,7 @@ import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import process, management
+from app.routes import process, management, family
 from app.services import storage
 
 # Configure logging
@@ -44,24 +44,27 @@ app = FastAPI(
 # them into a combined regex passed to `allow_origin_regex`. Exact origins
 # are passed to `allow_origins` as before.
 cors_origins = get_cors_origins()
-exact_origins = [o for o in cors_origins if "*" not in o]
-wildcard_origins = [o for o in cors_origins if "*" in o]
+# Build a combined regex that covers both exact origins and wildcard patterns.
+regex_parts = []
+for pattern in cors_origins:
+    # Escape dots and other regex characters, then convert '*' to '.*'
+    # We escape common regex metacharacters first, then replace the literal '*' with '.*'
+    p = pattern
+    # Escape regex special chars except '*'
+    for ch in ".^$+?{}[]|()":
+        p = p.replace(ch, f"\\{ch}")
+    p = p.replace("*", ".*")
+    if not p.startswith("^"):
+        p = f"^{p}$"
+    regex_parts.append(p)
+
 allow_origin_regex = None
-if wildcard_origins:
-    # Convert wildcard patterns into regex fragments, then join with |
-    regex_parts = []
-    for pattern in wildcard_origins:
-        # Escape dots and replace '*' with '.*'
-        p = pattern.replace(".", r"\.").replace("*", ".*")
-        # Ensure we match the full origin
-        if not p.startswith("^"):
-            p = f"^{p}$"
-        regex_parts.append(p)
+if regex_parts:
     allow_origin_regex = "|".join(regex_parts)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=exact_origins,
+    allow_origins=[],
     allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
@@ -71,6 +74,7 @@ app.add_middleware(
 # Include routers
 app.include_router(process.router, prefix="/process", tags=["process"])
 app.include_router(management.router, tags=["management"])
+app.include_router(family.router, prefix="/family", tags=["family"])
 
 
 @app.on_event("startup")

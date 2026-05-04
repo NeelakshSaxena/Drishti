@@ -1,133 +1,97 @@
 """
-Pydantic data models for request/response validation.
+Pydantic data models for family tracking system.
 
-This module defines all data structures used in the API:
-- Legacy schemas for backward compatibility with old endpoints
-- New schemas for parent/child management
-- Health check response schema
-- Request schemas with validation
-
-All models include field validation and documentation.
+Models:
+- Parent/Child relationships with linking
+- Trip management (start, end, events)
+- Event tracking (flight, train, bus, hostel, custom)
+- Health check response
 """
 
 from typing import Any
 from datetime import datetime
-
 from pydantic import BaseModel, Field
 
 
 def schema_to_dict(schema: BaseModel) -> dict[str, Any]:
-    """
-    Convert Pydantic model to dictionary, excluding None values.
-    
-    Handles both Pydantic v1 and v2 API differences.
-    
-    Args:
-        schema: Pydantic model instance
-        
-    Returns:
-        Dictionary representation of the model
-    """
+    """Convert Pydantic model to dict, excluding None values."""
     if hasattr(schema, "model_dump"):
         return schema.model_dump(exclude_none=True)
     return schema.dict(exclude_none=True)
 
 
-# Legacy schemas (process routes)
-class VerifyFlightRequest(BaseModel):
-    airline_iata: str = Field(..., min_length=1)
-    flight_number: str = Field(..., min_length=1)
-    flight_date: str | None = None
+# Event models
+class TripEvent(BaseModel):
+    id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
+    type: str = Field(..., description="flight, train, bus, hostel, custom")
+    from_location: str = Field(..., alias="from_location")
+    to_location: str = Field(..., alias="to_location")
+    time: str | None = None
+    description: str = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        allow_population_by_field_name = True
+
+
+# Trip models
+class Trip(BaseModel):
+    id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
+    events: list[TripEvent] = []
+    status: str = "active"  # active, ended
+    started_at: datetime = Field(default_factory=datetime.utcnow)
+    ended_at: datetime | None = None
+
+
+# Child models
+class Child(BaseModel):
+    id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
+    child_code: str  # Unique 6-8 char code for parent linking
+    parent_id: str | None = None  # Linked parent ID
+    current_trip: Trip | None = None
+    trip_history: list[Trip] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# Parent models
+class Parent(BaseModel):
+    id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
+    linked_children: list[str] = []  # List of child IDs
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# Request/Response models
+class LinkChildRequest(BaseModel):
+    child_code: str = Field(..., min_length=1, description="6-8 char code from child")
 
 
 class StartTripRequest(BaseModel):
-    trip_id: str | None = None
-    user_name: str | None = None
-    trip_mode: str | None = None
-    trip_start_time: str | None = None
-    flight_number: str | None = None
-    flight_info: dict[str, Any] | None = None
-    segments: list[dict[str, Any]] | None = None
+    pass  # Child starts a trip with no initial events
 
 
-class UpdateSegmentStatusRequest(BaseModel):
-    segment_index: int
-    status: str = Field(..., min_length=1)
-
-
-class LogLocationRequest(BaseModel):
-    lat: float
-    lon: float
-
-
-# New schemas for parent/child management
-class EventBase(BaseModel):
-    type: str = Field(..., description="flight, train, hostel, etc")
-    from_location: str | None = Field(None, alias="from", serialization_alias="from")
-    to_location: str | None = Field(None, alias="to", serialization_alias="to")
+class TripEventRequest(BaseModel):
+    type: str = Field(..., description="flight, train, bus, hostel, custom")
+    from_location: str = Field(..., description="Starting location")
+    to_location: str = Field(..., description="Ending location")
     time: str | None = None
-    ticket_url: str = "N/A"
-    status: str = "upcoming"
-
-    class Config:
-        allow_population_by_field_name = True
-        populate_by_name = True
+    description: str = ""
 
 
-class Event(EventBase):
-    id: str | None = None
+class EndTripRequest(BaseModel):
+    pass
 
 
-class TripBase(BaseModel):
-    child_id: str = Field(..., description="Child ID for this trip")
-    status: str = "active"
-    current_event_index: int = 0
+class ChildDashboardResponse(BaseModel):
+    child: Child
+    current_trip: Trip | None
 
 
-class Trip(TripBase):
-    id: str
-    events: list[Event] = []
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-
-
-class ChildBase(BaseModel):
-    name: str = Field(..., min_length=1)
-
-
-class Child(ChildBase):
-    id: str
-    active_trip_id: str | None = None
-    created_at: datetime | None = None
-
-
-class LocationUpdate(BaseModel):
-    lat: float = Field(..., description="Latitude")
-    lng: float = Field(..., description="Longitude")
-
-
-class CreateChildRequest(BaseModel):
-    name: str = Field(..., min_length=1, description="Child's name")
-
-
-class StartTripChildRequest(BaseModel):
-    child_id: str | None = None
-    events: list[EventBase] | None = None
-
-
-class AddEventRequest(BaseModel):
-    type: str = Field(..., description="Event type: flight, train, hostel, etc")
-    from_location: str = Field(..., alias="from")
-    to_location: str = Field(..., alias="to")
-    time: str | None = None
-    ticket_url: str = "N/A"
-
-    class Config:
-        allow_population_by_field_name = True
+class ParentDashboardResponse(BaseModel):
+    parent: Parent
+    linked_children: list[Child] = []
 
 
 class HealthCheckResponse(BaseModel):
-    status: str
-    backend: str
-    services: dict[str, bool]
-    errors: list[str] = []
+    status: str = "ok"
+    backend: str = "running"
+    services: dict[str, str] = {"api": "up"}

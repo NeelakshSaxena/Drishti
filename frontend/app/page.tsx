@@ -1,103 +1,361 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { LayoutDashboard, Moon, Settings, Sun, Map } from "lucide-react";
-import { HealthIndicator } from "@/components/HealthIndicator";
-import { ParentDashboard } from "@/components/ParentDashboard";
-import { ChildPanel } from "@/components/ChildPanel";
-import { MapView } from "@/components/MapView";
-import { SettingsPanel } from "@/components/SettingsPanel";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import type { Child } from "@/lib/api";
-import { UI_CONFIG } from "@/lib/constants";
-import { getStoredBackendUrl } from "@/lib/settings";
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import * as api from "@/lib/api"
+import toast, { Toaster } from "react-hot-toast"
 
-/**
- * Main dashboard page
- * Displays parent view or child view based on selection
- */
 export default function Home() {
-  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
-  const [viewMode, setViewMode] = useState<"dashboard" | "settings">("dashboard");
-  const [backendUrl, setBackendUrl] = useState(() => getStoredBackendUrl());
+  const [step, setStep] = useState<"role" | "child" | "parent">("role")
+  const [childId, setChildId] = useState<string | null>(null)
+  const [parentId, setParentId] = useState<string | null>(null)
 
-  // Apply dark mode to document root
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+  const handleStartAsChild = async () => {
+    try {
+      const result = await api.initChild()
+      setChildId(result.child_id)
+      localStorage.setItem("childId", result.child_id)
+      localStorage.setItem("childCode", result.child_code)
+      setStep("child")
+      toast.success("Child account created!")
+    } catch (error) {
+      toast.error("Failed to create child account")
     }
-  }, [darkMode]);
+  }
+
+  const handleStartAsParent = async () => {
+    try {
+      const result = await api.initParent()
+      setParentId(result.parent_id)
+      localStorage.setItem("parentId", result.parent_id)
+      setStep("parent")
+      toast.success("Parent account created!")
+    } catch (error) {
+      toast.error("Failed to create parent account")
+    }
+  }
+
+  if (step === "role") {
+    return (
+      <>
+        <Toaster />
+        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+          <Card className="w-full max-w-md border-slate-800">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl">Drishti</CardTitle>
+              <CardDescription>Family Trip Tracking</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button onClick={handleStartAsParent} className="w-full" variant="default" size="lg">
+                Login as Parent
+              </Button>
+              <Button onClick={handleStartAsChild} className="w-full" variant="secondary" size="lg">
+                Login as Child
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    )
+  }
+
+  if (step === "child" && childId) {
+    return <ChildDashboard childId={childId} />
+  }
+
+  if (step === "parent" && parentId) {
+    return <ParentDashboard parentId={parentId} />
+  }
+
+  return null
+}
+
+function ChildDashboard({ childId }: { childId: string }) {
+  const [childCode, setChildCode] = useState<string | null>(null)
+  const [parentLinked, setParentLinked] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [hasActiveTrip, setHasActiveTrip] = useState(false)
+  const [tripEvents, setTripEvents] = useState<api.TripEvent[]>([])
+  const [eventType, setEventType] = useState("")
+  const [from, setFrom] = useState("")
+  const [to, setTo] = useState("")
+  const [time, setTime] = useState("")
+
+  useEffect(() => {
+    const code = localStorage.getItem("childCode")
+    setChildCode(code)
+    loadDashboard()
+  }, [])
+
+  const loadDashboard = async () => {
+    try {
+      const data = await api.getChildDashboard(childId)
+      setParentLinked(!!data.child.parent_id)
+      setHasActiveTrip(!!data.current_trip)
+      if (data.current_trip) {
+        setTripEvents(data.current_trip.events)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStartTrip = async () => {
+    try {
+      await api.startTrip(childId)
+      setHasActiveTrip(true)
+      setTripEvents([])
+      toast.success("Trip started!")
+    } catch (error) {
+      toast.error("Failed to start trip")
+    }
+  }
+
+  const handleEndTrip = async () => {
+    try {
+      await api.endTrip(childId)
+      setHasActiveTrip(false)
+      setTripEvents([])
+      toast.success("Trip ended!")
+    } catch (error) {
+      toast.error("Failed to end trip")
+    }
+  }
+
+  const handleAddEvent = async () => {
+    if (!eventType || !from || !to) {
+      toast.error("Please fill in all event details")
+      return
+    }
+
+    try {
+      await api.addEventToTrip(childId, {
+        type: eventType,
+        from_location: from,
+        to_location: to,
+        time,
+        description: "",
+      })
+      setEventType("")
+      setFrom("")
+      setTo("")
+      setTime("")
+      await loadDashboard()
+      toast.success("Event added!")
+    } catch (error) {
+      toast.error("Failed to add event")
+    }
+  }
+
+  const copyCode = () => {
+    if (childCode) {
+      navigator.clipboard.writeText(childCode)
+      toast.success("Code copied!")
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <p className="text-slate-400">Loading...</p>
+      </div>
+    )
+  }
 
   return (
-    <ErrorBoundary>
-      <main className="min-h-screen bg-white dark:bg-slate-950 transition-colors">
-        {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur px-4 py-4 sm:px-6">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                Drishti
-              </h1>
-              <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                Child Trip Management Dashboard
-              </p>
-            </div>
+    <>
+      <Toaster />
+      <div className="min-h-screen bg-[#0a0a0a] p-6">
+        <div className="mx-auto max-w-2xl space-y-6">
+          {!parentLinked && (
+            <Card className="border-yellow-900 bg-slate-900">
+              <CardHeader>
+                <CardTitle>Share Your Code with Parent</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between rounded bg-slate-800 p-4">
+                  <code className="text-lg font-mono text-slate-50">{childCode}</code>
+                  <Button onClick={copyCode} variant="secondary" size="sm">
+                    Copy
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("dashboard")}
-                  className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    viewMode === "dashboard"
-                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50"
-                  }`}
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("settings")}
-                  className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    viewMode === "settings"
-                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50"
-                  }`}
-                >
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </button>
-              </div>
-
-              <HealthIndicator
-                autoRefresh
-                interval={UI_CONFIG.AUTO_REFRESH_INTERVAL}
-                refreshKey={backendUrl}
-              />
-
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition"
-                title={darkMode ? "Light mode" : "Dark mode"}
-              >
-                {darkMode ? (
-                  <Sun className="h-5 w-5" />
+          {parentLinked && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Trip Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!hasActiveTrip ? (
+                  <Button onClick={handleStartTrip} className="w-full">
+                    Start Trip
+                  </Button>
                 ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-          </div>
-        </header>
+                  <>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <select
+                          value={eventType}
+                          onChange={(e) => setEventType(e.target.value)}
+                          className="rounded border border-slate-800 bg-slate-950 px-3 py-2 text-slate-50"
+                        >
+                          <option value="">Select Event Type</option>
+                          <option value="flight">Flight</option>
+                          <option value="train">Train</option>
+                          <option value="bus">Bus</option>
+                          <option value="hostel">Hostel</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                        <Input placeholder="From Location" value={from} onChange={(e) => setFrom(e.target.value)} />
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Input placeholder="To Location" value={to} onChange={(e) => setTo(e.target.value)} />
+                        <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+                      </div>
+                      <Button onClick={handleAddEvent} className="w-full">
+                        Add Event
+                      </Button>
+                    </div>
 
-        {/* Main Content */}
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          {viewMode === "settings" ? (
+                    {tripEvents.length > 0 && (
+                      <div className="mt-6 space-y-3 border-t border-slate-800 pt-4">
+                        <h3 className="font-semibold text-slate-50">Trip Timeline</h3>
+                        {tripEvents.map((event) => (
+                          <div key={event.id} className="rounded bg-slate-800 p-3 text-sm">
+                            <p className="font-medium text-slate-50">{event.type.toUpperCase()}</p>
+                            <p className="text-slate-400">
+                              {event.from_location} → {event.to_location}
+                            </p>
+                            {event.time && <p className="text-xs text-slate-500">{event.time}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <Button onClick={handleEndTrip} variant="destructive" className="w-full">
+                      End Trip
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function ParentDashboard({ parentId }: { parentId: string }) {
+  const [childCode, setChildCode] = useState("")
+  const [linkedChildren, setLinkedChildren] = useState<api.Child[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const loadDashboard = async () => {
+    try {
+      const data = await api.getParentDashboard(parentId)
+      setLinkedChildren(data.linked_children)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    loadDashboard()
+  }, [])
+
+  const handleLinkChild = async () => {
+    if (!childCode.trim()) {
+      toast.error("Please enter a child code")
+      return
+    }
+
+    try {
+      await api.linkChild(parentId, childCode.toUpperCase())
+      setChildCode("")
+      await loadDashboard()
+      toast.success("Child linked successfully!")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to link child")
+    }
+  }
+
+  return (
+    <>
+      <Toaster />
+      <div className="min-h-screen bg-[#0a0a0a] p-6">
+        <div className="mx-auto max-w-4xl space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Link Child</CardTitle>
+              <CardDescription>Enter your child's code to start tracking their trips</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter child code (e.g., ABC1234)"
+                  value={childCode}
+                  onChange={(e) => setChildCode(e.target.value.toUpperCase())}
+                  className="flex-1"
+                />
+                <Button onClick={handleLinkChild}>Link Child</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {linkedChildren.length === 0 ? (
+            <Card className="border-slate-800">
+              <CardContent className="pt-6 text-center text-slate-400">
+                No children linked yet. Share your child's code above to start.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {linkedChildren.map((child) => (
+                <Card key={child.id}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Child #{child.child_code.slice(0, 3)}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {child.current_trip ? (
+                      <div>
+                        <p className="mb-3 text-sm font-semibold text-slate-400">Active Trip</p>
+                        <div className="space-y-2">
+                          {child.current_trip.events.map((event) => (
+                            <div key={event.id} className="rounded bg-slate-800 p-2 text-sm">
+                              <p className="font-medium text-slate-50">{event.type.toUpperCase()}</p>
+                              <p className="text-slate-400">
+                                {event.from_location} → {event.to_location}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400">No active trip</p>
+                    )}
+                    {child.trip_history.length > 0 && (
+                      <div className="border-t border-slate-800 pt-4">
+                        <p className="mb-2 text-xs font-semibold text-slate-500">Trip History ({child.trip_history.length})</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
             <div className="mx-auto max-w-3xl">
               <SettingsPanel
                 onBackendUrlSaved={(savedUrl) => {

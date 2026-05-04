@@ -1,12 +1,14 @@
 """
-In-memory storage manager for children, trips, locations, and events.
-Supports optional JSON persistence for recovery across restarts.
+In-memory storage for family tracking system.
+Manages parents, children, linking codes, and trips.
 """
 
 import json
 import os
 import uuid
 import logging
+import string
+import random
 from datetime import datetime
 from typing import Any
 
@@ -18,9 +20,9 @@ DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 STORAGE_FILE = os.path.join(DATA_DIR, "storage.json")
 
 # In-memory data stores
-children: dict[str, dict[str, Any]] = {}
-trips: dict[str, dict[str, Any]] = {}
-locations: dict[str, dict[str, Any]] = {}
+parents: dict[str, dict[str, Any]] = {}  # parent_id -> parent data
+children: dict[str, dict[str, Any]] = {}  # child_id -> child data
+child_codes: dict[str, str] = {}  # child_code -> child_id (for fast lookup)
 
 
 def ensure_data_dir():
@@ -28,9 +30,18 @@ def ensure_data_dir():
     os.makedirs(DATA_DIR, exist_ok=True)
 
 
+def generate_child_code() -> str:
+    """Generate a unique 7-character child code."""
+    chars = string.ascii_uppercase + string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=7))
+        if code not in child_codes:
+            return code
+
+
 def load_storage():
     """Load data from JSON file into memory."""
-    global children, trips, locations
+    global parents, children, child_codes
     
     if not os.path.exists(STORAGE_FILE):
         logger.info("No storage file found. Starting with empty storage.")
@@ -39,10 +50,13 @@ def load_storage():
     try:
         with open(STORAGE_FILE, "r") as f:
             data = json.load(f)
+            parents = data.get("parents", {})
             children = data.get("children", {})
-            trips = data.get("trips", {})
-            locations = data.get("locations", {})
-        logger.info(f"Loaded storage: {len(children)} children, {len(trips)} trips")
+            # Rebuild child_codes mapping
+            for child_id, child_data in children.items():
+                if "child_code" in child_data:
+                    child_codes[child_data["child_code"]] = child_id
+        logger.info(f"Loaded: {len(parents)} parents, {len(children)} children")
     except Exception as e:
         logger.error(f"Failed to load storage: {e}")
 
@@ -53,9 +67,8 @@ def save_storage():
     
     try:
         data = {
+            "parents": parents,
             "children": children,
-            "trips": trips,
-            "locations": locations,
         }
         with open(STORAGE_FILE, "w") as f:
             json.dump(data, f, indent=2, default=str)
@@ -66,25 +79,51 @@ def save_storage():
 
 def clear_all():
     """Clear all in-memory storage (for testing)."""
-    global children, trips, locations
+    global parents, children, child_codes
+    parents.clear()
     children.clear()
-    trips.clear()
-    locations.clear()
+    child_codes.clear()
+
+
+
+# Parent operations
+def create_parent() -> dict[str, Any]:
+    """Create a new parent."""
+    parent_id = str(uuid.uuid4())
+    parent = {
+        "id": parent_id,
+        "linked_children": [],
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    parents[parent_id] = parent
+    save_storage()
+    logger.info(f"Created parent: {parent_id}")
+    return parent
+
+
+def get_parent(parent_id: str) -> dict[str, Any] | None:
+    """Get a parent by ID."""
+    return parents.get(parent_id)
 
 
 # Child operations
-def create_child(name: str) -> dict[str, Any]:
-    """Create a new child."""
+def create_child() -> dict[str, Any]:
+    """Create a new child (unlinked)."""
     child_id = str(uuid.uuid4())
+    child_code = generate_child_code()
+    
     child = {
         "id": child_id,
-        "name": name,
-        "active_trip_id": None,
+        "child_code": child_code,
+        "parent_id": None,
+        "current_trip": None,
+        "trip_history": [],
         "created_at": datetime.utcnow().isoformat(),
     }
     children[child_id] = child
+    child_codes[child_code] = child_id
     save_storage()
-    logger.info(f"Created child: {child_id} ({name})")
+    logger.info(f"Created child: {child_id} with code: {child_code}")
     return child
 
 
@@ -93,140 +132,143 @@ def get_child(child_id: str) -> dict[str, Any] | None:
     return children.get(child_id)
 
 
-def get_all_children() -> list[dict[str, Any]]:
-    """Get all children."""
-    return list(children.values())
+def get_child_by_code(code: str) -> dict[str, Any] | None:
+    """Get a child by their code."""
+    child_id = child_codes.get(code)
+    if child_id:
+        return children.get(child_id)
+    return None
 
 
-def update_child_active_trip(child_id: str, trip_id: str | None) -> bool:
-    """Update a child's active trip ID."""
-    if child_id not in children:
-        return False
+# Linking operations
+def link_child_to_parent(parent_id: str, child_code: str) -> tuple[bool, str]:
+    """Link a child to a parent using child code."""
+    if parent_id not in parents:
+        return False, "Parent not found"
     
-    children[child_id]["active_trip_id"] = trip_id
+    child = get_child_by_code(child_code)
+    if not child:
+        return False, "Child code not found"
+    
+    child_id = child["id"]
+    
+    # Check if child already linked
+    if child["parent_id"] is not None:
+        return False, "Child already linked to another parent"
+    
+    # Link child to parent
+    child["parent_id"] = parent_id
+    parents[parent_id]["linked_children"].append(child_id)
+    
     save_storage()
-    logger.info(f"Updated child {child_id} active trip to {trip_id}")
-    return True
+    logger.info(f"Linked child {child_id} to parent {parent_id}")
+    return True, "Child linked successfully"
 
 
 # Trip operations
-def create_trip(child_id: str, events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    """Create a new trip."""
+def start_trip(child_id: str) -> dict[str, Any] | None:
+    """Start a new trip for a child."""
     if child_id not in children:
-        raise ValueError(f"Child {child_id} not found")
+        return None
     
-    trip_id = str(uuid.uuid4())
+    child = children[child_id]
+    
     trip = {
-        "id": trip_id,
-        "child_id": child_id,
+        "id": str(uuid.uuid4()),
+        "events": [],
         "status": "active",
-        "current_event_index": 0,
-        "events": events or [],
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "started_at": datetime.utcnow().isoformat(),
+        "ended_at": None,
     }
-    trips[trip_id] = trip
-    update_child_active_trip(child_id, trip_id)
+    
+    child["current_trip"] = trip
     save_storage()
-    logger.info(f"Created trip: {trip_id} for child {child_id}")
+    logger.info(f"Started trip {trip['id']} for child {child_id}")
     return trip
 
 
-def get_trip(trip_id: str) -> dict[str, Any] | None:
-    """Get a trip by ID."""
-    return trips.get(trip_id)
-
-
-def end_trip(trip_id: str) -> bool:
-    """End a trip."""
-    if trip_id not in trips:
-        return False
+def add_event_to_trip(child_id: str, event_data: dict[str, Any]) -> dict[str, Any] | None:
+    """Add event to current trip."""
+    if child_id not in children:
+        return None
     
-    trip = trips[trip_id]
-    trip["status"] = "ended"
-    trip["updated_at"] = datetime.utcnow().isoformat()
+    child = children[child_id]
+    if not child["current_trip"]:
+        return None
     
-    child_id = trip["child_id"]
-    update_child_active_trip(child_id, None)
+    event = {
+        "id": str(uuid.uuid4()),
+        "type": event_data.get("type"),
+        "from_location": event_data.get("from_location"),
+        "to_location": event_data.get("to_location"),
+        "time": event_data.get("time"),
+        "description": event_data.get("description", ""),
+        "created_at": datetime.utcnow().isoformat(),
+    }
     
+    child["current_trip"]["events"].append(event)
     save_storage()
-    logger.info(f"Ended trip: {trip_id}")
-    return True
-
-
-def add_event_to_trip(trip_id: str, event: dict[str, Any]) -> dict[str, Any]:
-    """Add an event to a trip."""
-    if trip_id not in trips:
-        raise ValueError(f"Trip {trip_id} not found")
-    
-    trip = trips[trip_id]
-    event_id = str(uuid.uuid4())
-    event["id"] = event_id
-    event["status"] = event.get("status", "upcoming")
-    
-    trip["events"].append(event)
-    trip["updated_at"] = datetime.utcnow().isoformat()
-    
-    save_storage()
-    logger.info(f"Added event {event_id} to trip {trip_id}")
+    logger.info(f"Added event {event['id']} to trip {child['current_trip']['id']}")
     return event
 
 
-def next_event(trip_id: str) -> dict[str, Any] | None:
-    """Mark current event as completed and move to next event."""
-    if trip_id not in trips:
+def end_trip(child_id: str) -> bool:
+    """End the current trip for a child."""
+    if child_id not in children:
+        return False
+    
+    child = children[child_id]
+    if not child["current_trip"]:
+        return False
+    
+    # Move current trip to history
+    trip = child["current_trip"]
+    trip["status"] = "ended"
+    trip["ended_at"] = datetime.utcnow().isoformat()
+    
+    child["trip_history"].append(trip)
+    child["current_trip"] = None
+    
+    save_storage()
+    logger.info(f"Ended trip {trip['id']} for child {child_id}")
+    return True
+
+
+def get_parent_dashboard(parent_id: str) -> dict[str, Any] | None:
+    """Get dashboard data for a parent with all linked children."""
+    if parent_id not in parents:
         return None
     
-    trip = trips[trip_id]
-    current_idx = trip["current_event_index"]
+    parent = parents[parent_id]
+    linked_children = []
     
-    # Mark current as completed
-    if 0 <= current_idx < len(trip["events"]):
-        trip["events"][current_idx]["status"] = "completed"
+    for child_id in parent["linked_children"]:
+        child = get_child(child_id)
+        if child:
+            linked_children.append(child)
     
-    # Move to next
-    next_idx = current_idx + 1
-    if next_idx < len(trip["events"]):
-        trip["current_event_index"] = next_idx
-        trip["events"][next_idx]["status"] = "current"
-    else:
-        trip["status"] = "ended"
-    
-    trip["updated_at"] = datetime.utcnow().isoformat()
-    save_storage()
-    
-    logger.info(f"Advanced trip {trip_id} to event index {next_idx}")
-    return trip["events"][next_idx] if next_idx < len(trip["events"]) else None
-
-
-# Location operations
-def update_location(child_id: str, lat: float, lng: float) -> dict[str, Any]:
-    """Update or create a location record for a child."""
-    if child_id not in children:
-        raise ValueError(f"Child {child_id} not found")
-    
-    location = {
-        "child_id": child_id,
-        "lat": lat,
-        "lng": lng,
-        "updated_at": datetime.utcnow().isoformat(),
+    return {
+        "parent": parent,
+        "linked_children": linked_children,
     }
-    locations[child_id] = location
-    save_storage()
-    logger.info(f"Updated location for child {child_id}: ({lat}, {lng})")
-    return location
 
 
-def get_location(child_id: str) -> dict[str, Any] | None:
-    """Get the latest location for a child."""
-    return locations.get(child_id)
+def get_child_dashboard(child_id: str) -> dict[str, Any] | None:
+    """Get dashboard data for a child."""
+    if child_id not in children:
+        return None
+    
+    child = children[child_id]
+    return {
+        "child": child,
+        "current_trip": child["current_trip"],
+        "trip_history": child["trip_history"],
+    }
 
 
-# Health check
 def is_healthy() -> bool:
     """Check if storage is operational."""
     try:
-        # Try to ensure directory exists
         ensure_data_dir()
         return True
     except Exception as e:
