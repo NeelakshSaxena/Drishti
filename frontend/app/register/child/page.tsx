@@ -12,6 +12,7 @@ import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
 export default function Page() {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -26,12 +27,13 @@ export default function Page() {
         const res = await fetch('http://localhost:8000/family/child/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name, email }),
         });
         const data = await res.json();
         if (data.success) {
           localStorage.setItem('child_id', data.child_id);
           localStorage.setItem('child_code', data.child_code);
+          if (data.name) localStorage.setItem('child_name', data.name);
           router.push('/auth/child');
         } else {
           setErrorMsg(data.message || 'Account not found. Please create an account.');
@@ -41,13 +43,16 @@ export default function Page() {
         const res = await fetch('http://localhost:8000/family/child/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, age: 10 }), // Dummy age for MVP
+          body: JSON.stringify({ name, email, age: 10 }), // Dummy age for MVP
         });
         const data = await res.json();
         if (data.success) {
           localStorage.setItem('child_id', data.child_id);
           localStorage.setItem('child_code', data.child_code);
+          if (data.name) localStorage.setItem('child_name', data.name);
           router.push('/auth/child');
+        } else {
+          setErrorMsg(data.message || 'Failed to create account.');
         }
       }
     } catch (err) {
@@ -86,6 +91,10 @@ export default function Page() {
 <Label className="text-xs font-semibold uppercase tracking-wider text-zinc-400" htmlFor="name">Full Name</Label>
 <Input className="w-full h-12 bg-zinc-900/50 border-zinc-800 focus-visible:ring-zinc-400 text-white" id="name" name="name" placeholder="Enter your name" required type="text" value={name} onChange={(e) => setName(e.target.value)}/>
 </div>
+<div className="space-y-3">
+<Label className="text-xs font-semibold uppercase tracking-wider text-zinc-400" htmlFor="email">Email Address</Label>
+<Input className="w-full h-12 bg-zinc-900/50 border-zinc-800 focus-visible:ring-zinc-400 text-white" id="email" name="email" placeholder="Enter your email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)}/>
+</div>
 <Button disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest bg-white text-black hover:bg-zinc-200 mt-2" type="submit">
   {loading ? "Loading..." : (isLoginMode ? "Log In" : "Create Account")}
 </Button>
@@ -101,10 +110,6 @@ export default function Page() {
 </Card>
 </div>
 </main>
-
-
-
-
     </>
   );
 }

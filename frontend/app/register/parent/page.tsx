@@ -32,6 +32,7 @@ export default function Page() {
         const data = await res.json();
         if (data.success) {
           localStorage.setItem('parent_id', data.parent_id);
+          if (data.name) localStorage.setItem('parent_name', data.name);
           router.push('/parent/link-child');
         } else {
           setErrorMsg(data.message || 'Account not found. Please create an account.');
@@ -46,7 +47,10 @@ export default function Page() {
         const data = await res.json();
         if (data.success) {
           localStorage.setItem('parent_id', data.parent_id);
+          if (data.name) localStorage.setItem('parent_name', data.name);
           router.push('/parent/link-child');
+        } else {
+          setErrorMsg(data.message || 'Failed to create account.');
         }
       }
     } catch (err) {

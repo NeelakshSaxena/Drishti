@@ -2,10 +2,12 @@
 
 import type { StyleSpecification } from "maplibre-gl";
 import { Map, MapMarker, MarkerContent } from "@/components/ui/map";
-import type { StartTripResponse, TripSegment } from "@/lib/api";
+import { useEffect, useRef, useState } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
 
-const DEFAULT_CENTER: [number, number] = [77.209, 28.6139];
+const DEFAULT_CENTER: [number, number] = [77.209, 28.6139]; // New Delhi fallback
 const DEFAULT_ZOOM = 10;
+
 const OSM_STYLE: StyleSpecification = {
   version: 8,
   sources: {
@@ -13,7 +15,8 @@ const OSM_STYLE: StyleSpecification = {
       type: "raster",
       tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
       tileSize: 256,
-      attribution: "OpenStreetMap",
+      attribution: "© OpenStreetMap contributors",
+      maxzoom: 19,
     },
   },
   layers: [
@@ -25,109 +28,81 @@ const OSM_STYLE: StyleSpecification = {
   ],
 };
 
-type MapPoint = {
-  id: string;
-  label: string;
-  lat: number;
-  lon: number;
-};
+type MapPoint = { lat: number; lon: number; label?: string };
 
 type MapViewProps = {
-  data: StartTripResponse | null;
+  /** Live center point – when it changes the map will fly there */
+  centerPoint?: MapPoint | null;
+  /** Whether the map is user-interactive (pan/zoom) */
+  interactive?: boolean;
 };
 
-export function MapView({ data }: MapViewProps) {
-  const points = getMapPoints(data);
-  const center = getMapCenter(points);
+export function MapView({ centerPoint, interactive = false }: MapViewProps) {
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const [ready, setReady] = useState(false);
+
+  // Fly to new location whenever centerPoint changes
+  useEffect(() => {
+    if (!mapRef.current || !centerPoint) return;
+    mapRef.current.flyTo({
+      center: [centerPoint.lon, centerPoint.lat],
+      zoom: 15,
+      speed: 1.5,
+      curve: 1,
+    });
+  }, [centerPoint?.lat, centerPoint?.lon]);
+
+  const center = centerPoint
+    ? ([centerPoint.lon, centerPoint.lat] as [number, number])
+    : DEFAULT_CENTER;
 
   return (
-    <div className="relative h-full min-h-[500px] overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800">
+    <div className="relative h-full w-full min-h-[400px] overflow-hidden">
       <Map
-        key={`${center[0]}-${center[1]}-${points.length}`}
-        className="h-full min-h-[500px]"
+        ref={(m) => {
+          if (m) {
+            mapRef.current = m;
+            setReady(true);
+          }
+        }}
+        className="h-full w-full"
         center={center}
-        zoom={points.length > 0 ? 11 : DEFAULT_ZOOM}
-        interactive={false}
+        zoom={centerPoint ? 15 : DEFAULT_ZOOM}
+        interactive={interactive}
         styles={{ light: OSM_STYLE, dark: OSM_STYLE }}
         theme="light"
       >
-        {points.map((point) => (
-          <MapMarker key={point.id} longitude={point.lon} latitude={point.lat}>
+        {centerPoint && (
+          <MapMarker longitude={centerPoint.lon} latitude={centerPoint.lat}>
             <MarkerContent>
-              <div
-                data-testid={`map-marker-${point.id}`}
-                data-lat={point.lat}
-                data-lon={point.lon}
-                className="h-4 w-4 rounded-full border-2 border-white bg-emerald-600 shadow-md ring-4 ring-emerald-600/20"
-                title={point.label}
-              />
+              <div className="relative">
+                {/* Pulsing ring */}
+                <span className="absolute inset-0 -m-2 rounded-full bg-emerald-500/30 animate-ping" />
+                {/* Dot */}
+                <div
+                  className="h-4 w-4 rounded-full border-2 border-white bg-emerald-500 shadow-lg"
+                  title={centerPoint.label ?? "Location"}
+                />
+              </div>
             </MarkerContent>
           </MapMarker>
-        ))}
+        )}
       </Map>
-      <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm">
-        {points.length > 0 ? `${points.length} route points` : "Awaiting route"}
+
+      {/* Status overlay */}
+      <div className="pointer-events-none absolute left-3 top-3 rounded-lg border border-zinc-700/60 bg-zinc-950/80 backdrop-blur-sm px-3 py-1.5 text-xs font-semibold text-zinc-300 shadow flex items-center gap-2">
+        {centerPoint ? (
+          <>
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+            Live • {centerPoint.lat.toFixed(4)}, {centerPoint.lon.toFixed(4)}
+          </>
+        ) : (
+          <>
+            <span className="h-2 w-2 rounded-full bg-zinc-600 inline-block" />
+            Awaiting location…
+          </>
+        )}
       </div>
     </div>
   );
-}
-
-function getMapPoints(data: StartTripResponse | null): MapPoint[] {
-  if (!data) {
-    return [];
-  }
-
-  return data.segments.flatMap((segment, index) =>
-    getSegmentPoints(segment, index),
-  );
-}
-
-function getSegmentPoints(segment: TripSegment, index: number): MapPoint[] {
-  const coords = segment.verifiedData?.coords;
-  const points: MapPoint[] = [];
-
-  if (isCoordinate(coords?.departure)) {
-    points.push({
-      id: `${index}-departure`,
-      label: "Departure",
-      lat: coords.departure[0],
-      lon: coords.departure[1],
-    });
-  }
-
-  if (isCoordinate(coords?.arrival)) {
-    points.push({
-      id: `${index}-arrival`,
-      label: "Arrival",
-      lat: coords.arrival[0],
-      lon: coords.arrival[1],
-    });
-  }
-
-  return points;
-}
-
-function isCoordinate(value: unknown): value is [number, number] {
-  return (
-    Array.isArray(value) &&
-    value.length === 2 &&
-    typeof value[0] === "number" &&
-    typeof value[1] === "number"
-  );
-}
-
-function getMapCenter(points: MapPoint[]): [number, number] {
-  if (points.length === 0) {
-    return DEFAULT_CENTER;
-  }
-
-  const totals = points.reduce(
-    (acc, point) => ({
-      lat: acc.lat + point.lat,
-      lon: acc.lon + point.lon,
-    }),
-    { lat: 0, lon: 0 },
-  );
-
-  return [totals.lon / points.length, totals.lat / points.length];
 }

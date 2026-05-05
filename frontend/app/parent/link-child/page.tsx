@@ -15,6 +15,8 @@ export default function Page() {
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const [linkedChild, setLinkedChild] = useState<string | null>(null);
+
   const handleChange = (idx: number, val: string) => {
     val = val.toUpperCase();
     if (val.length > 1) {
@@ -65,7 +67,10 @@ export default function Page() {
       });
       const data = await res.json();
       if (data.success) {
-        router.push('/parent/dashboard');
+        setLinkedChild(data.child_name || 'Child');
+        setTimeout(() => {
+            router.push('/parent/dashboard');
+        }, 2000);
       } else {
         setError(data.detail || 'Invalid code');
       }
@@ -102,36 +107,51 @@ export default function Page() {
 <Card className="w-full bg-zinc-950/60 backdrop-blur-md shadow-none border-zinc-800">
 {/*  Header Section  */}
 <CardHeader className="text-center pt-8 pb-6">
-<CardTitle className="text-3xl font-bold text-white mb-2">Hello, Parent!</CardTitle>
-<CardDescription className="text-sm text-zinc-400">Enter the code provided by your child</CardDescription>
+<CardTitle className="text-3xl font-bold text-white mb-2">{linkedChild ? "Success!" : "Hello, Parent!"}</CardTitle>
+<CardDescription className="text-sm text-zinc-400">{linkedChild ? "Connection established securely." : "Enter the code provided by your child"}</CardDescription>
 </CardHeader>
 <CardContent className="px-8">
 {/*  6-Digit OTP Component  */}
 <div className="mb-8">
-<div className="flex justify-center gap-2">
-  {code.map((digit, idx) => (
-    <Input 
-      key={idx} 
-      ref={(el) => { inputRefs.current[idx] = el; }}
-      value={digit}
-      onChange={(e) => handleChange(idx, e.target.value)}
-      onKeyDown={(e) => handleKeyDown(idx, e)}
-      className="w-12 h-14 bg-zinc-900/50 border-zinc-800 rounded-lg text-center text-2xl text-white focus-visible:ring-zinc-400 transition-colors" 
-      maxLength={1} 
-      type="text"
-    />
-  ))}
-</div>
-{error && <p className="text-red-500 text-center mt-4 text-sm">{error}</p>}
+  {linkedChild ? (
+    <div className="flex flex-col items-center justify-center py-6">
+        <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500 rounded-full flex items-center justify-center mb-4">
+            <Lock className="w-8 h-8 text-emerald-400" />
+        </div>
+        <h3 className="text-xl font-bold text-white text-center">Linked {linkedChild}</h3>
+    </div>
+  ) : (
+    <>
+    <div className="flex justify-center gap-2">
+      {code.map((digit, idx) => (
+        <Input 
+          key={idx} 
+          ref={(el) => { inputRefs.current[idx] = el; }}
+          value={digit}
+          onChange={(e) => handleChange(idx, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(idx, e)}
+          className="w-12 h-14 bg-zinc-900/50 border-zinc-800 rounded-lg text-center text-2xl text-white focus-visible:ring-zinc-400 transition-colors" 
+          maxLength={1} 
+          type="text"
+        />
+      ))}
+    </div>
+    {error && <p className="text-red-500 text-center mt-4 text-sm">{error}</p>}
+    </>
+  )}
 </div>
 {/*  Action Section  */}
 <div className="flex flex-col gap-4">
-<Button disabled={loading} onClick={handleSubmit} className="w-full h-12 font-bold uppercase tracking-widest bg-white text-black hover:bg-zinc-200">
-<span>{loading ? "Linking..." : "Link Child"}</span>
-</Button>
-<Button variant="ghost" className="w-full text-zinc-400 text-sm hover:text-white transition-colors">
-                    Didn't get a code? Contact Support
-                </Button>
+  {!linkedChild && (
+    <>
+    <Button disabled={loading} onClick={handleSubmit} className="w-full h-12 font-bold uppercase tracking-widest bg-white text-black hover:bg-zinc-200">
+    <span>{loading ? "Linking..." : "Link Child"}</span>
+    </Button>
+    <Button variant="ghost" className="w-full text-zinc-400 text-sm hover:text-white transition-colors">
+                        Didn't get a code? Contact Support
+                    </Button>
+    </>
+  )}
 </div>
 </CardContent>
 {/*  Footer Meta Info  */}
