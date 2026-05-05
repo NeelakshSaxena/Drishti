@@ -46,17 +46,22 @@ class Trip(BaseModel):
 class Child(BaseModel):
     id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
     name: str | None = None  # Optional display name
+    email: str | None = None
     child_code: str  # Unique 6-8 char code for parent linking
     parent_id: str | None = None  # Linked parent ID
     active_trip_id: str | None = None
     current_trip: Trip | None = None
     trip_history: list[Trip] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    lat: float | None = None
+    lon: float | None = None
 
 
 # Parent models
 class Parent(BaseModel):
     id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
+    name: str | None = None
+    email: str | None = None
     linked_children: list[str] = []  # List of child IDs
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -85,6 +90,7 @@ class EndTripRequest(BaseModel):
 class ChildDashboardResponse(BaseModel):
     child: Child
     current_trip: Trip | None
+    parent_name: str | None = None
 
 
 class ParentDashboardResponse(BaseModel):
@@ -123,7 +129,7 @@ class StartTripChildRequest(BaseModel):
 
 class LocationUpdate(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
-    lng: float = Field(..., ge=-180, le=180)
+    lon: float = Field(..., ge=-180, le=180)
 
 
 # ===== Process route schemas (legacy) =====
@@ -142,3 +148,30 @@ class UpdateSegmentStatusRequest(BaseModel):
 class LogLocationRequest(BaseModel):
     lat: float
     lon: float
+
+
+# ===== Registration schemas =====
+
+class ParentInitRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., min_length=3)
+    password: str | None = None
+
+
+class ChildInitRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    email: str | None = None
+    age: int | None = Field(None, ge=4, le=25)
+    password: str | None = None
+
+
+class ParentLoginRequest(BaseModel):
+    name: str | None = None
+    email: str = Field(..., min_length=1, max_length=100)
+    password: str | None = None
+
+
+class ChildLoginRequest(BaseModel):
+    name: str | None = None
+    email: str = Field(..., min_length=1, max_length=100)
+    password: str | None = None

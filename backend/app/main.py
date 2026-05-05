@@ -62,3 +62,7 @@ def startup_event():
 @app.get("/")
 def root():
     return {"status": "ok", "service": "drishti-api", "version": "0.1.0"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}

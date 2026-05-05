@@ -1,14 +1,18 @@
 """
-In-memory storage for family tracking system.
+SQLite storage for family tracking system.
 Manages parents, children, linking codes, and trips.
 """
 
+from datetime import timedelta
+
+import hashlib
 import json
 import os
 import uuid
 import logging
 import string
 import random
+import sqlite3
 from datetime import datetime
 from typing import Any
 
@@ -17,162 +21,366 @@ logger = logging.getLogger(__name__)
 # Data file paths
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-STORAGE_FILE = os.path.join(DATA_DIR, "storage.json")
+STORAGE_FILE = os.path.join(DATA_DIR, "drishti.db")
 
-# In-memory data stores
-parents: dict[str, dict[str, Any]] = {}  # parent_id -> parent data
-children: dict[str, dict[str, Any]] = {}  # child_id -> child data
-child_codes: dict[str, str] = {}  # child_code -> child_id (for fast lookup)
+
+def get_db():
+    conn = sqlite3.connect(STORAGE_FILE, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def hash_password(password: str) -> str:
+    """SHA-256 hash of the password."""
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
 def ensure_data_dir():
-    """Create data directory if it doesn't exist."""
+    """Create data directory and tables if they don't exist."""
     os.makedirs(DATA_DIR, exist_ok=True)
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS parents (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            email TEXT,
+            password TEXT,
+            linked_children TEXT,
+            created_at TEXT
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS children (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            email TEXT,
+            password TEXT,
+            age INTEGER,
+            child_code TEXT UNIQUE,
+            parent_id TEXT,
+            current_trip TEXT,
+            trip_history TEXT,
+            created_at TEXT,
+            lat REAL,
+            lon REAL,
+            share_token TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
+def migrate_db():
+    """Migrate existing tables – add new columns if they don't exist."""
+    conn = get_db()
+    c = conn.cursor()
+    new_cols = [
+        ("parents",  "password TEXT"),
+        ("children", "password TEXT"),
+        ("children", "share_token TEXT"),
+        ("children", "share_token_expires_at TEXT"),
+        ("children", "is_sharing INTEGER DEFAULT 0"),
+        ("children", "location_updated_at TEXT"),
+    ]
+    for table, col_def in new_cols:
+        try:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN {col_def}")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+    conn.commit()
+    conn.close()
+
+
+# Initialize DB on load
+ensure_data_dir()
+migrate_db()
 
 
 def generate_child_code() -> str:
-    """Generate a unique 7-character child code."""
+    """Generate a unique 6-character child code."""
     chars = string.ascii_uppercase + string.digits
+    conn = get_db()
+    c = conn.cursor()
     while True:
-        code = ''.join(random.choices(chars, k=7))
-        if code not in child_codes:
+        code = ''.join(random.choices(chars, k=6))
+        c.execute('SELECT id FROM children WHERE child_code = ?', (code,))
+        if not c.fetchone():
+            conn.close()
             return code
 
 
-def load_storage():
-    """Load data from JSON file into memory."""
-    global parents, children, child_codes
-    
-    if not os.path.exists(STORAGE_FILE):
-        logger.info("No storage file found. Starting with empty storage.")
-        return
+def generate_share_token() -> str:
+    """Generate a unique share token for guest view."""
+    return uuid.uuid4().hex  # 32-char hex
 
-    try:
-        with open(STORAGE_FILE, "r") as f:
-            data = json.load(f)
-            parents = data.get("parents", {})
-            children = data.get("children", {})
-            # Rebuild child_codes mapping
-            for child_id, child_data in children.items():
-                if "child_code" in child_data:
-                    child_codes[child_data["child_code"]] = child_id
-        logger.info(f"Loaded: {len(parents)} parents, {len(children)} children")
-    except Exception as e:
-        logger.error(f"Failed to load storage: {e}")
+
+def load_storage():
+    """No-op for sqlite."""
+    pass
 
 
 def save_storage():
-    """Save in-memory data to JSON file."""
-    ensure_data_dir()
-    
-    try:
-        data = {
-            "parents": parents,
-            "children": children,
-        }
-        with open(STORAGE_FILE, "w") as f:
-            json.dump(data, f, indent=2, default=str)
-        logger.debug("Storage saved to file")
-    except Exception as e:
-        logger.error(f"Failed to save storage: {e}")
+    """No-op for sqlite."""
+    pass
 
 
 def clear_all():
     """Clear all in-memory storage (for testing)."""
-    global parents, children, child_codes
-    parents.clear()
-    children.clear()
-    child_codes.clear()
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('DELETE FROM parents')
+    c.execute('DELETE FROM children')
+    conn.commit()
+    conn.close()
 
 
+# Helper to deserialize Row to dict
+def parent_row_to_dict(row):
+    if not row:
+        return None
+    d = dict(row)
+    d['linked_children'] = json.loads(d['linked_children']) if d['linked_children'] else []
+    return d
 
-# Parent operations
-def create_parent() -> dict[str, Any]:
-    """Create a new parent."""
+
+def child_row_to_dict(row):
+    if not row:
+        return None
+    d = dict(row)
+    d['current_trip'] = json.loads(d['current_trip']) if d['current_trip'] else None
+    d['trip_history'] = json.loads(d['trip_history']) if d['trip_history'] else []
+    return d
+
+
+# ── Parent operations ──────────────────────────────────────────────────────────
+
+def create_parent(name: str | None = None, email: str | None = None,
+                  password: str | None = None) -> dict[str, Any]:
     parent_id = str(uuid.uuid4())
+    pw_hash = hash_password(password) if password else None
     parent = {
         "id": parent_id,
+        "name": name,
+        "email": email,
+        "password": pw_hash,
         "linked_children": [],
         "created_at": datetime.utcnow().isoformat(),
     }
-    parents[parent_id] = parent
-    save_storage()
-    logger.info(f"Created parent: {parent_id}")
+    conn = get_db()
+    conn.execute(
+        'INSERT INTO parents (id, name, email, password, linked_children, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        (parent["id"], parent["name"], parent["email"], parent["password"],
+         json.dumps(parent["linked_children"]), parent["created_at"])
+    )
+    conn.commit()
+    conn.close()
+    logger.info(f"Created parent: {parent_id} ({name})")
     return parent
 
 
 def get_parent(parent_id: str) -> dict[str, Any] | None:
-    """Get a parent by ID."""
-    return parents.get(parent_id)
+    conn = get_db()
+    c = conn.execute('SELECT * FROM parents WHERE id = ?', (parent_id,))
+    row = c.fetchone()
+    conn.close()
+    return parent_row_to_dict(row)
 
 
-# Child operations
-def create_child() -> dict[str, Any]:
-    """Create a new child (unlinked)."""
+def find_parent_by_email(email: str) -> dict[str, Any] | None:
+    conn = get_db()
+    c = conn.execute('SELECT * FROM parents WHERE email = ?', (email,))
+    row = c.fetchone()
+    conn.close()
+    return parent_row_to_dict(row)
+
+
+def find_parent_by_name_and_email(name: str | None, email: str,
+                                   password: str | None = None) -> dict[str, Any] | None:
+    conn = get_db()
+    c = conn.execute('SELECT * FROM parents WHERE email = ?', (email,))
+    row = c.fetchone()
+    conn.close()
+    parent = parent_row_to_dict(row)
+    if not parent:
+        return None
+    # If account has a password, verify it
+    if parent.get("password") and password:
+        if parent["password"] != hash_password(password):
+            return None  # Wrong password
+    # If account has a password but none provided, deny
+    elif parent.get("password") and not password:
+        return None
+    return parent
+
+
+# ── Child operations ──────────────────────────────────────────────────────────
+
+def create_child(name: str | None = None, email: str | None = None,
+                 age: int | None = None, password: str | None = None) -> dict[str, Any]:
     child_id = str(uuid.uuid4())
     child_code = generate_child_code()
-    
+    pw_hash = hash_password(password) if password else None
+
     child = {
         "id": child_id,
+        "name": name,
+        "email": email,
+        "password": pw_hash,
+        "age": age,
         "child_code": child_code,
         "parent_id": None,
         "current_trip": None,
         "trip_history": [],
         "created_at": datetime.utcnow().isoformat(),
+        "lat": None,
+        "lon": None,
+        "share_token": None,
     }
-    children[child_id] = child
-    child_codes[child_code] = child_id
-    save_storage()
-    logger.info(f"Created child: {child_id} with code: {child_code}")
+    conn = get_db()
+    conn.execute(
+        'INSERT INTO children (id, name, email, password, age, child_code, parent_id, '
+        'current_trip, trip_history, created_at, lat, lon, share_token) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        (child["id"], child["name"], child["email"], child["password"], child["age"],
+         child["child_code"], child["parent_id"],
+         json.dumps(child["current_trip"]), json.dumps(child["trip_history"]),
+         child["created_at"], child["lat"], child["lon"], child["share_token"])
+    )
+    conn.commit()
+    conn.close()
+    logger.info(f"Created child: {child_id} ({name}) with code: {child_code}")
     return child
 
 
 def get_child(child_id: str) -> dict[str, Any] | None:
-    """Get a child by ID."""
-    return children.get(child_id)
+    conn = get_db()
+    c = conn.execute('SELECT * FROM children WHERE id = ?', (child_id,))
+    row = c.fetchone()
+    conn.close()
+    return child_row_to_dict(row)
+
+
+def find_child_by_email(email: str, password: str | None = None) -> dict[str, Any] | None:
+    conn = get_db()
+    c = conn.execute('SELECT * FROM children WHERE email = ?', (email,))
+    row = c.fetchone()
+    conn.close()
+    child = child_row_to_dict(row)
+    if not child:
+        return None
+    if child.get("password") and password:
+        if child["password"] != hash_password(password):
+            return None
+    elif child.get("password") and not password:
+        return None
+    return child
+
+
+def find_child_by_name(name: str) -> dict[str, Any] | None:
+    conn = get_db()
+    c = conn.execute('SELECT * FROM children WHERE name = ?', (name,))
+    row = c.fetchone()
+    conn.close()
+    return child_row_to_dict(row)
 
 
 def get_child_by_code(code: str) -> dict[str, Any] | None:
-    """Get a child by their code."""
-    child_id = child_codes.get(code)
-    if child_id:
-        return children.get(child_id)
-    return None
+    conn = get_db()
+    c = conn.execute('SELECT * FROM children WHERE child_code = ?', (code,))
+    row = c.fetchone()
+    conn.close()
+    return child_row_to_dict(row)
 
 
-# Linking operations
+def get_child_by_share_token(token: str) -> dict[str, Any] | None:
+    conn = get_db()
+    c = conn.execute('SELECT * FROM children WHERE share_token = ?', (token,))
+    row = c.fetchone()
+    conn.close()
+    child = child_row_to_dict(row)
+    if not child:
+        return None
+    # Check expiry
+    expires_at = child.get("share_token_expires_at")
+    if expires_at:
+        try:
+            if datetime.utcnow() > datetime.fromisoformat(expires_at):
+                return None  # Expired
+        except ValueError:
+            pass
+    return child
+
+
+def create_share_token(child_id: str) -> str:
+    """Generate a fresh share token for a child and persist it (expires in 48h)."""
+    token = generate_share_token()
+    expires_at = (datetime.utcnow() + timedelta(hours=48)).isoformat()
+    conn = get_db()
+    conn.execute(
+        'UPDATE children SET share_token = ?, share_token_expires_at = ? WHERE id = ?',
+        (token, expires_at, child_id)
+    )
+    conn.commit()
+    conn.close()
+    return token, expires_at
+
+
+def stop_sharing(child_id: str):
+    """Mark child as not actively sharing location."""
+    conn = get_db()
+    conn.execute('UPDATE children SET is_sharing = 0 WHERE id = ?', (child_id,))
+    conn.commit()
+    conn.close()
+
+
+# ── Location ──────────────────────────────────────────────────────────────────
+
+def update_child_location(child_id: str, lat: float, lon: float):
+    now = datetime.utcnow().isoformat()
+    conn = get_db()
+    conn.execute(
+        'UPDATE children SET lat = ?, lon = ?, is_sharing = 1, location_updated_at = ? WHERE id = ?',
+        (lat, lon, now, child_id)
+    )
+    conn.commit()
+    conn.close()
+
+
+# ── Linking operations ────────────────────────────────────────────────────────
+
 def link_child_to_parent(parent_id: str, child_code: str) -> tuple[bool, str]:
-    """Link a child to a parent using child code."""
-    if parent_id not in parents:
+    parent = get_parent(parent_id)
+    if not parent:
         return False, "Parent not found"
-    
+
     child = get_child_by_code(child_code)
     if not child:
         return False, "Child code not found"
-    
+
     child_id = child["id"]
-    
-    # Check if child already linked
     if child["parent_id"] is not None:
         return False, "Child already linked to another parent"
-    
-    # Link child to parent
-    child["parent_id"] = parent_id
-    parents[parent_id]["linked_children"].append(child_id)
-    
-    save_storage()
+
+    conn = get_db()
+    conn.execute('UPDATE children SET parent_id = ? WHERE id = ?', (parent_id, child_id))
+    parent["linked_children"].append(child_id)
+    conn.execute('UPDATE parents SET linked_children = ? WHERE id = ?',
+                 (json.dumps(parent["linked_children"]), parent_id))
+    conn.commit()
+    conn.close()
+
     logger.info(f"Linked child {child_id} to parent {parent_id}")
     return True, "Child linked successfully"
 
 
-# Trip operations
+# ── Trip operations ───────────────────────────────────────────────────────────
+
 def start_trip(child_id: str) -> dict[str, Any] | None:
-    """Start a new trip for a child."""
-    if child_id not in children:
+    child = get_child(child_id)
+    if not child:
         return None
-    
-    child = children[child_id]
-    
+
     trip = {
         "id": str(uuid.uuid4()),
         "events": [],
@@ -180,22 +388,20 @@ def start_trip(child_id: str) -> dict[str, Any] | None:
         "started_at": datetime.utcnow().isoformat(),
         "ended_at": None,
     }
-    
-    child["current_trip"] = trip
-    save_storage()
-    logger.info(f"Started trip {trip['id']} for child {child_id}")
+
+    conn = get_db()
+    conn.execute('UPDATE children SET current_trip = ? WHERE id = ?',
+                 (json.dumps(trip), child_id))
+    conn.commit()
+    conn.close()
     return trip
 
 
 def add_event_to_trip(child_id: str, event_data: dict[str, Any]) -> dict[str, Any] | None:
-    """Add event to current trip."""
-    if child_id not in children:
+    child = get_child(child_id)
+    if not child or not child["current_trip"]:
         return None
-    
-    child = children[child_id]
-    if not child["current_trip"]:
-        return None
-    
+
     event = {
         "id": str(uuid.uuid4()),
         "type": event_data.get("type"),
@@ -205,48 +411,49 @@ def add_event_to_trip(child_id: str, event_data: dict[str, Any]) -> dict[str, An
         "description": event_data.get("description", ""),
         "created_at": datetime.utcnow().isoformat(),
     }
-    
+
     child["current_trip"]["events"].append(event)
-    save_storage()
-    logger.info(f"Added event {event['id']} to trip {child['current_trip']['id']}")
+    conn = get_db()
+    conn.execute('UPDATE children SET current_trip = ? WHERE id = ?',
+                 (json.dumps(child["current_trip"]), child_id))
+    conn.commit()
+    conn.close()
     return event
 
 
 def end_trip(child_id: str) -> bool:
-    """End the current trip for a child."""
-    if child_id not in children:
+    child = get_child(child_id)
+    if not child or not child["current_trip"]:
         return False
-    
-    child = children[child_id]
-    if not child["current_trip"]:
-        return False
-    
-    # Move current trip to history
+
     trip = child["current_trip"]
     trip["status"] = "ended"
     trip["ended_at"] = datetime.utcnow().isoformat()
-    
+
     child["trip_history"].append(trip)
-    child["current_trip"] = None
-    
-    save_storage()
-    logger.info(f"Ended trip {trip['id']} for child {child_id}")
+    conn = get_db()
+    conn.execute(
+        'UPDATE children SET current_trip = ?, trip_history = ? WHERE id = ?',
+        (json.dumps(None), json.dumps(child["trip_history"]), child_id)
+    )
+    conn.commit()
+    conn.close()
     return True
 
 
+# ── Dashboard helpers ─────────────────────────────────────────────────────────
+
 def get_parent_dashboard(parent_id: str) -> dict[str, Any] | None:
-    """Get dashboard data for a parent with all linked children."""
-    if parent_id not in parents:
+    parent = get_parent(parent_id)
+    if not parent:
         return None
-    
-    parent = parents[parent_id]
+
     linked_children = []
-    
     for child_id in parent["linked_children"]:
         child = get_child(child_id)
         if child:
             linked_children.append(child)
-    
+
     return {
         "parent": parent,
         "linked_children": linked_children,
@@ -254,20 +461,25 @@ def get_parent_dashboard(parent_id: str) -> dict[str, Any] | None:
 
 
 def get_child_dashboard(child_id: str) -> dict[str, Any] | None:
-    """Get dashboard data for a child."""
-    if child_id not in children:
+    child = get_child(child_id)
+    if not child:
         return None
-    
-    child = children[child_id]
+
+    parent_name = None
+    if child["parent_id"]:
+        parent = get_parent(child["parent_id"])
+        if parent:
+            parent_name = parent.get("name")
+
     return {
         "child": child,
         "current_trip": child["current_trip"],
         "trip_history": child["trip_history"],
+        "parent_name": parent_name,
     }
 
 
 def is_healthy() -> bool:
-    """Check if storage is operational."""
     try:
         ensure_data_dir()
         return True
