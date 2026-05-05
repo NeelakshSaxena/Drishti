@@ -30,3 +30,9 @@ logs/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+
+# Database
+backend/data/*.db
+backend/data/storage.json
+*.sqlite3
+*.db

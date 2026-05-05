@@ -48,7 +48,7 @@ export default function LegacyPage() {
         </aside>
 
         <section className="min-h-[520px] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-2 shadow-sm sm:p-3">
-          <MapView data={result} />
+          <MapView centerPoint={null} />
         </section>
       </div>
     </main>

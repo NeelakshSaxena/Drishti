@@ -1,7 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Play, Users, Square, VolumeX, PlusCircle, LinkIcon, AlertTriangle, Bell, BatteryCharging, Signal, CheckCircle } from 'lucide-react';
+import {
+  Play, Users, Square, VolumeX, PlusCircle, LinkIcon,
+  AlertTriangle, Bell, BatteryCharging, Signal,
+  CheckCircle, Copy, X
+} from 'lucide-react';
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
 
@@ -10,6 +14,10 @@ export default function Page() {
   const [parentName, setParentName] = useState<string>('Not Linked');
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareExpiry, setShareExpiry] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
   const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -23,7 +31,6 @@ export default function Page() {
         .then(data => {
           if (data.child?.name) setChildName(data.child.name);
           if (data.parent_name) setParentName(data.parent_name);
-          // Restore last known location from DB
           if (data.child?.lat && data.child?.lon) {
             setLocation({ lat: data.child.lat, lon: data.child.lon });
           }
@@ -32,7 +39,6 @@ export default function Page() {
     }
   }, []);
 
-  // Post location to backend
   const postLocation = (lat: number, lon: number) => {
     const childId = localStorage.getItem('child_id');
     if (!childId) return;
@@ -70,9 +76,45 @@ export default function Page() {
       watchIdRef.current = null;
     }
     setSharing(false);
+    // Tell backend the child stopped sharing
+    const childId = localStorage.getItem('child_id');
+    if (childId) {
+      fetch(`http://localhost:8000/family/child/stop-sharing?child_id=${childId}`, {
+        method: 'POST',
+      }).catch(console.error);
+    }
   };
 
-  // Cleanup on unmount
+  const handleShareLink = async () => {
+    const childId = localStorage.getItem('child_id');
+    if (!childId) return;
+    try {
+      const res = await fetch(`http://localhost:8000/family/child/share-link?child_id=${childId}`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.success) {
+        const fullUrl = `${window.location.origin}${data.url}`;
+        setShareLink(fullUrl);
+        setShareExpiry(data.expires_at
+          ? new Date(data.expires_at + 'Z').toLocaleString()
+          : null);
+        setShowShareModal(true);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const copyLink = () => {
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink).then(() => {
+        setCopyDone(true);
+        setTimeout(() => setCopyDone(false), 2000);
+      });
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (watchIdRef.current !== null) {
@@ -83,12 +125,12 @@ export default function Page() {
 
   return (
     <>
-      {/* Top App Bar */}
+      {/* ── Top App Bar (matches parent dashboard style) ─────────────────── */}
       <header className="flex justify-between items-center w-full px-6 h-14 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 font-medium text-white">
-        <div className="flex items-center gap-4">
-          <h1 className="hidden md:block font-black text-white text-lg">Live Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <span className="font-black text-white text-lg tracking-widest uppercase">Drishti</span>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-5">
           <div className="flex items-center gap-4 text-zinc-500">
             <Bell className="w-5 h-5" />
             <BatteryCharging className="w-5 h-5" />
@@ -100,16 +142,19 @@ export default function Page() {
         </div>
       </header>
 
-      {/* Main Content Canvas */}
+      {/* ── Main Content ─────────────────────────────────────────────────── */}
       <main className="w-full h-[calc(100vh-3.5rem-5rem)] flex overflow-hidden">
+
         {/* LEFT CONTROL COLUMN */}
         <section className="w-80 border-r border-zinc-800 bg-zinc-950 p-6 flex flex-col gap-6 overflow-y-auto z-10">
+
+          {/* Greeting first, label below */}
           <div>
-            <span className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1 block">Current Status</span>
             <h2 className="text-2xl font-bold text-white">Welcome, {childName}</h2>
+            <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-1">Current Status</p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Actions */}
           <div className="flex flex-col gap-2">
             <Button variant="secondary" className="w-full justify-between h-14 rounded-xl font-bold">
               <span>Create Trip</span>
@@ -136,13 +181,17 @@ export default function Page() {
               </Button>
             )}
 
-            <Button variant="outline" className="w-full justify-between h-14 border-zinc-800 text-white rounded-xl hover:bg-zinc-900 transition-colors">
+            <Button
+              variant="outline"
+              onClick={handleShareLink}
+              className="w-full justify-between h-14 border-zinc-800 text-white rounded-xl hover:bg-zinc-900 transition-colors"
+            >
               <span>Share via Link</span>
               <LinkIcon className="w-5 h-5" />
             </Button>
           </div>
 
-          {/* Location Status */}
+          {/* Last known location */}
           {location && (
             <div className="border border-zinc-800 rounded-xl p-3 bg-zinc-900/30 text-xs text-zinc-400 space-y-1">
               <p className="text-zinc-500 uppercase tracking-widest text-[9px] font-bold">Last Known Location</p>
@@ -151,9 +200,9 @@ export default function Page() {
             </div>
           )}
 
-          {/* Parent Info Card */}
+          {/* Parent / guardian card */}
           <div className="mt-auto border border-zinc-800 rounded-xl p-4 bg-zinc-900/30">
-            <span className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-3">Linked Guardian</span>
+            <span className="text-zinc-500 text-[10px] uppercase tracking-widest block mb-3">You are linked to</span>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center border border-zinc-700">
                 <Users className="w-5 h-5 text-zinc-400" />
@@ -161,7 +210,7 @@ export default function Page() {
               <div>
                 <p className="text-white font-bold text-sm">{parentName}</p>
                 <div className="flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${parentName !== 'Not Linked' ? 'bg-emerald-500' : 'bg-zinc-600'}`}></span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${parentName !== 'Not Linked' ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
                   <p className="text-zinc-500 text-[11px]">
                     {parentName !== 'Not Linked' ? 'Connected' : 'Not linked yet'}
                   </p>
@@ -177,47 +226,87 @@ export default function Page() {
             <MapView interactive={true} centerPoint={location} />
           </div>
 
-          {/* Sharing status badge */}
-          <div className="absolute top-4 left-4 z-20">
-            {sharing && (
+          {sharing && (
+            <div className="absolute top-4 left-4 z-20">
               <div className="bg-zinc-950/90 backdrop-blur border border-emerald-800 rounded-lg px-3 py-1.5 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Sharing Live</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </section>
       </main>
 
-      {/* Bottom Action Bar */}
+      {/* ── Bottom Action Bar (h-20, matches parent) ─────────────────────── */}
       <footer className="fixed bottom-0 right-0 left-0 z-50 flex justify-center gap-4 items-center h-20 px-8 bg-zinc-950 border-t border-zinc-800">
         <div className="flex-1 flex gap-4">
-          <div className="border border-zinc-800 rounded-md px-6 py-2 flex flex-col items-start">
+          <div className="border border-zinc-800 rounded-md px-5 py-2 flex flex-col items-start">
             <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Location Sharing</span>
             <span className={`text-xs font-bold ${sharing ? 'text-emerald-400' : 'text-zinc-400'}`}>
               {sharing ? 'Active' : 'Off'}
             </span>
           </div>
-          <div className="border border-zinc-800 rounded-md px-6 py-2 flex flex-col items-start">
+          <div className="border border-zinc-800 rounded-md px-5 py-2 flex flex-col items-start">
             <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Linked To</span>
             <span className="text-white text-xs font-bold">{parentName}</span>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button variant="outline" className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white transition-all gap-2">
-            <CheckCircle className="w-5 h-5" />
+            <CheckCircle className="w-4 h-4" />
             <span className="text-[11px] font-bold uppercase tracking-widest">Safe Check-in</span>
           </Button>
           <Button variant="outline" className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white transition-all gap-2">
-            <VolumeX className="w-5 h-5" />
+            <VolumeX className="w-4 h-4" />
             <span className="text-[11px] font-bold uppercase tracking-widest">Silent Alert</span>
           </Button>
-          <Button variant="secondary" className="h-10 bg-white text-black hover:bg-zinc-200 transition-all gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            <span className="text-[11px] font-bold uppercase text-red-500 tracking-widest">Emergency SOS</span>
+          <Button className="h-10 bg-white text-black hover:bg-zinc-200 transition-all gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
+            <span className="text-[11px] font-bold text-red-500 uppercase tracking-widest">SOS</span>
           </Button>
         </div>
       </footer>
+
+      {/* ── Share Link Modal ──────────────────────────────────────────────── */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold text-lg">Share Location Link</h3>
+              <button onClick={() => setShowShareModal(false)} className="text-zinc-500 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-zinc-400 text-sm mb-5">
+              Anyone with this link can view your live location and trip status — <strong className="text-white">without logging in</strong>. They cannot control anything.
+            </p>
+            {shareExpiry && (
+              <p className="text-zinc-500 text-[11px] mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Expires: {shareExpiry}
+              </p>
+            )}
+            <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 mb-4 flex items-center gap-3">
+              <span className="text-zinc-300 text-xs font-mono flex-1 truncate">{shareLink}</span>
+              <button
+                onClick={copyLink}
+                className="shrink-0 text-zinc-400 hover:text-white transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            </div>
+            {copyDone && (
+              <p className="text-emerald-400 text-xs text-center mb-3">✓ Copied to clipboard</p>
+            )}
+            <Button
+              onClick={copyLink}
+              className="w-full h-11 bg-white text-black font-bold uppercase tracking-widest hover:bg-zinc-200"
+            >
+              {copyDone ? '✓ Copied!' : 'Copy Link'}
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
