@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from 'lucide-react';
 import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
+import { useEffect } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
 
 export default function Page() {
   const router = useRouter();
@@ -17,6 +20,15 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+
+  useEffect(() => {
+    // If already logged in and "always logged in" was intended, we can auto-redirect
+    if (localStorage.getItem('child_id')) {
+      router.push('/auth/child');
+    }
+  }, [router]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,32 +36,42 @@ export default function Page() {
     setErrorMsg('');
     try {
       if (isLoginMode) {
-        const res = await fetch('http://localhost:8000/family/child/login', {
+        const res = await fetch(`${API_URL}/family/child/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password }),
         });
         const data = await res.json();
         if (data.success) {
-          localStorage.setItem('child_id', data.child_id);
-          localStorage.setItem('child_code', data.child_code);
-          if (data.name) localStorage.setItem('child_name', data.name);
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('child_id', data.child_id);
+          storage.setItem('child_code', data.child_code);
+          if (data.name) storage.setItem('child_name', data.name);
+          
+          if (!rememberMe) {
+            // Also clear from local storage if they didn't check remember me, just in case
+            localStorage.removeItem('child_id');
+            localStorage.removeItem('child_code');
+            localStorage.removeItem('child_name');
+          }
+          
           router.push('/auth/child');
         } else {
           setErrorMsg(data.message || 'Account not found. Please create an account.');
           setIsLoginMode(false);
         }
       } else {
-        const res = await fetch('http://localhost:8000/family/child/init', {
+        const res = await fetch(`${API_URL}/family/child/init`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password, age: 10 }),
         });
         const data = await res.json();
         if (data.success) {
-          localStorage.setItem('child_id', data.child_id);
-          localStorage.setItem('child_code', data.child_code);
-          if (data.name) localStorage.setItem('child_name', data.name);
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('child_id', data.child_id);
+          storage.setItem('child_code', data.child_code);
+          if (data.name) storage.setItem('child_name', data.name);
           router.push('/auth/child');
         } else {
           setErrorMsg(data.message || 'Failed to create account.');
@@ -143,6 +165,19 @@ export default function Page() {
                       {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    className="w-4 h-4 rounded border-zinc-800 bg-zinc-900/50 text-emerald-500 focus:ring-emerald-500/20"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <Label htmlFor="remember" className="text-sm font-medium text-zinc-400">
+                    Keep me logged in
+                  </Label>
                 </div>
 
                 {errorMsg && (

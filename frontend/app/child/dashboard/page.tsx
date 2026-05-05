@@ -9,6 +9,8 @@ import {
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
+
 export default function Page() {
   const [childName, setChildName] = useState<string>('Child');
   const [parentName, setParentName] = useState<string>('Not Linked');
@@ -26,7 +28,7 @@ export default function Page() {
     if (name) setChildName(name);
 
     if (childId) {
-      fetch(`http://localhost:8000/family/child/dashboard?child_id=${childId}`)
+      fetch(`${API_URL}/family/child/dashboard?child_id=${childId}`)
         .then(res => res.json())
         .then(data => {
           if (data.child?.name) setChildName(data.child.name);
@@ -42,7 +44,7 @@ export default function Page() {
   const postLocation = (lat: number, lon: number) => {
     const childId = localStorage.getItem('child_id');
     if (!childId) return;
-    fetch(`http://localhost:8000/family/child/location?child_id=${childId}`, {
+    fetch(`${API_URL}/family/child/location?child_id=${childId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lat, lon }),
@@ -79,7 +81,7 @@ export default function Page() {
     // Tell backend the child stopped sharing
     const childId = localStorage.getItem('child_id');
     if (childId) {
-      fetch(`http://localhost:8000/family/child/stop-sharing?child_id=${childId}`, {
+      fetch(`${API_URL}/family/child/stop-sharing?child_id=${childId}`, {
         method: 'POST',
       }).catch(console.error);
     }
@@ -89,7 +91,7 @@ export default function Page() {
     const childId = localStorage.getItem('child_id');
     if (!childId) return;
     try {
-      const res = await fetch(`http://localhost:8000/family/child/share-link?child_id=${childId}`, {
+      const res = await fetch(`${API_URL}/family/child/share-link?child_id=${childId}`, {
         method: 'POST',
       });
       const data = await res.json();

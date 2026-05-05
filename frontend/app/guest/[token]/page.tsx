@@ -4,6 +4,8 @@ import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
 import { Eye, Clock, Footprints, Users, AlertTriangle, WifiOff } from 'lucide-react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
+
 type GuestData = {
   child_name: string;
   parent_name: string | null;
@@ -25,7 +27,7 @@ export default function GuestPage({ params }: { params: { token: string } }) {
 
   const fetchData = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/family/guest/${token}`);
+      const res = await fetch(`${API_URL}/family/guest/${token}`);
       if (!res.ok) {
         setError('This link is invalid or has expired (links expire after 48 hours).');
         return;

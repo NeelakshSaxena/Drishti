@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from 'lucide-react';
 import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
+import { useEffect } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
 
 export default function Page() {
   const router = useRouter();
@@ -17,6 +20,15 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+
+  useEffect(() => {
+    // If already logged in, auto-redirect
+    if (localStorage.getItem('parent_id')) {
+      router.push('/parent/link-child');
+    }
+  }, [router]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,30 +36,38 @@ export default function Page() {
     setErrorMsg('');
     try {
       if (isLoginMode) {
-        const res = await fetch('http://localhost:8000/family/parent/login', {
+        const res = await fetch(`${API_URL}/family/parent/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password }),
         });
         const data = await res.json();
         if (data.success) {
-          localStorage.setItem('parent_id', data.parent_id);
-          if (data.name) localStorage.setItem('parent_name', data.name);
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('parent_id', data.parent_id);
+          if (data.name) storage.setItem('parent_name', data.name);
+
+          if (!rememberMe) {
+            localStorage.removeItem('parent_id');
+            localStorage.removeItem('parent_name');
+          }
+
           router.push('/parent/link-child');
         } else {
           setErrorMsg(data.message || 'Account not found. Please create an account.');
           setIsLoginMode(false);
         }
       } else {
-        const res = await fetch('http://localhost:8000/family/parent/init', {
+        const res = await fetch(`${API_URL}/family/parent/init`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password }),
         });
         const data = await res.json();
         if (data.success) {
-          localStorage.setItem('parent_id', data.parent_id);
-          if (data.name) localStorage.setItem('parent_name', data.name);
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('parent_id', data.parent_id);
+          if (data.name) storage.setItem('parent_name', data.name);
           router.push('/parent/link-child');
         } else {
           setErrorMsg(data.message || 'Failed to create account.');
@@ -138,6 +158,19 @@ export default function Page() {
                       {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    className="w-4 h-4 rounded border-zinc-800 bg-zinc-900/50 text-emerald-500 focus:ring-emerald-500/20"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <Label htmlFor="remember" className="text-sm font-medium text-zinc-400">
+                    Keep me logged in
+                  </Label>
                 </div>
 
                 {errorMsg && (

@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
+
 export default function Page() {
   const router = useRouter();
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -60,7 +62,7 @@ export default function Page() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`http://localhost:8000/family/parent/link-child?parent_id=${parent_id}`, {
+      const res = await fetch(`${API_URL}/family/parent/link-child?parent_id=${parent_id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ child_code }),

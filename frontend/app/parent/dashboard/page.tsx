@@ -5,6 +5,8 @@ import { Bell, BatteryCharging, Signal, RefreshCw, Clock, Footprints } from 'luc
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
+
 export default function Page() {
   const [parentName, setParentName] = useState<string>('Parent');
   const [selectedChild, setSelectedChild] = useState<any | null>(null);
@@ -15,7 +17,7 @@ export default function Page() {
     const parentId = localStorage.getItem('parent_id');
     if (!parentId) return;
     try {
-      const res = await fetch(`http://localhost:8000/family/parent/dashboard?parent_id=${parentId}`);
+      const res = await fetch(`${API_URL}/family/parent/dashboard?parent_id=${parentId}`);
       const data = await res.json();
       if (data.parent?.name) setParentName(data.parent.name);
       if (data.linked_children?.length > 0) {

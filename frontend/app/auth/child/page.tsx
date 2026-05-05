@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, HelpCircle, Fingerprint, RefreshCcw } from 'lucide-react';
 import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
+
 export default function Page() {
   const [code, setCode] = useState('');
   const [parentName, setParentName] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function Page() {
         if (!child_id) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/family/child/dashboard?child_id=${child_id}`);
+            const res = await fetch(`${API_URL}/family/child/dashboard?child_id=${child_id}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.parent_name) {
