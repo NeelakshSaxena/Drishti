@@ -34,11 +34,12 @@ DB_PORT = int(os.getenv("DB_PORT", "5432"))
 DB_NAME = os.getenv("DB_NAME", "postgres")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not DB_HOST or not DB_PASSWORD:
+if not DATABASE_URL and (not DB_HOST or not DB_PASSWORD):
     raise RuntimeError(
-        "DB_HOST and DB_PASSWORD environment variables must be set. "
-        "Please set them in backend/.env or as environment variables on your host."
+        "Set DATABASE_URL or DB_HOST and DB_PASSWORD environment variables. "
+        "Please configure them in backend/.env or as environment variables on your host."
     )
 
 
@@ -66,6 +67,11 @@ def _resolve_db_addresses() -> list[str]:
 
 def get_db():
     """Return a new PostgreSQL connection."""
+    if DATABASE_URL:
+        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+        conn.autocommit = False
+        return conn
+
     addresses = _resolve_db_addresses()
     if not addresses:
         raise RuntimeError(

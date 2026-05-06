@@ -16,14 +16,17 @@ DB_PORT = int(os.getenv("DB_PORT", "5432"))
 DB_NAME = os.getenv("DB_NAME", "postgres")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 SQLITE_PATH = BACKEND_DIR / "data" / "drishti.db"
 
 if not SQLITE_PATH.exists():
     raise FileNotFoundError(f"SQLite database not found at {SQLITE_PATH}")
 
-if not DB_HOST or not DB_USER or not DB_PASSWORD:
-    raise RuntimeError("DB_HOST, DB_USER, and DB_PASSWORD must be set in backend/.env or environment variables.")
+if not DATABASE_URL and (not DB_HOST or not DB_USER or not DB_PASSWORD):
+    raise RuntimeError(
+        "Set DATABASE_URL or DB_HOST, DB_USER, and DB_PASSWORD in backend/.env or environment variables."
+    )
 
 
 def check_supabase_dns():
@@ -40,6 +43,9 @@ def check_supabase_dns():
 
 
 def get_postgres_conn():
+    if DATABASE_URL:
+        return psycopg2.connect(DATABASE_URL, sslmode="require", connect_timeout=10)
+
     return psycopg2.connect(
         host=DB_HOST,
         port=DB_PORT,
