@@ -1,15 +1,32 @@
 "use client";
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from 'lucide-react';
 import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
-import { useEffect } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
+
+/**
+ * Decide the correct destination for an authenticated parent:
+ * → /parent/dashboard   if they already have ≥1 linked child
+ * → /parent/link-child  otherwise
+ */
+async function resolveParentDestination(parentId: string): Promise<string> {
+  try {
+    const res = await fetch(`${API_URL}/family/parent/dashboard?parent_id=${parentId}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.linked_children && data.linked_children.length > 0) {
+        return '/parent/dashboard';
+      }
+    }
+  } catch { /* fall through */ }
+  return '/parent/link-child';
+}
 
 export default function Page() {
   const router = useRouter();
@@ -21,14 +38,17 @@ export default function Page() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+  const [checking, setChecking] = useState(true);
 
+  // ── Auto-redirect for already-authenticated users ──────────────────
   useEffect(() => {
-    // If already logged in, auto-redirect
-    if (localStorage.getItem('parent_id')) {
-      router.push('/parent/link-child');
+    const parentId = localStorage.getItem('parent_id');
+    if (parentId) {
+      resolveParentDestination(parentId).then((dest) => router.push(dest));
+    } else {
+      setChecking(false);
     }
   }, [router]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +72,9 @@ export default function Page() {
             localStorage.removeItem('parent_name');
           }
 
-          router.push('/parent/link-child');
+          // Redirect based on link status
+          const dest = await resolveParentDestination(data.parent_id);
+          router.push(dest);
         } else {
           setErrorMsg(data.message || 'Account not found. Please create an account.');
           setIsLoginMode(false);
@@ -68,6 +90,7 @@ export default function Page() {
           const storage = rememberMe ? localStorage : sessionStorage;
           storage.setItem('parent_id', data.parent_id);
           if (data.name) storage.setItem('parent_name', data.name);
+          // New accounts always go to link-child
           router.push('/parent/link-child');
         } else {
           setErrorMsg(data.message || 'Failed to create account.');
@@ -80,6 +103,19 @@ export default function Page() {
       setLoading(false);
     }
   };
+
+  // Show nothing while checking stored session
+  if (checking) {
+    return (
+      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
+        <div className="flex gap-1.5">
+          <span className="w-2 h-2 bg-zinc-500 rounded-full animate-pulse" />
+          <span className="w-2 h-2 bg-zinc-500 rounded-full animate-pulse [animation-delay:150ms]" />
+          <span className="w-2 h-2 bg-zinc-500 rounded-full animate-pulse [animation-delay:300ms]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

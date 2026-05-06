@@ -16,8 +16,30 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
   const [linkedChild, setLinkedChild] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  // ── Auto-redirect if parent already has linked children ────────────
+  useEffect(() => {
+    const parentId = localStorage.getItem('parent_id');
+    if (!parentId) {
+      setChecking(false);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/family/parent/dashboard?parent_id=${parentId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.linked_children && data.linked_children.length > 0) {
+            router.push('/parent/dashboard');
+            return;
+          }
+        }
+      } catch { /* ignore */ }
+      setChecking(false);
+    })();
+  }, [router]);
 
   const handleChange = (idx: number, val: string) => {
     val = val.toUpperCase();
@@ -83,6 +105,19 @@ export default function Page() {
     }
   };
 
+  // Show loader while checking session
+  if (checking) {
+    return (
+      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
+        <div className="flex gap-1.5">
+          <span className="w-2 h-2 bg-zinc-500 rounded-full animate-pulse" />
+          <span className="w-2 h-2 bg-zinc-500 rounded-full animate-pulse [animation-delay:150ms]" />
+          <span className="w-2 h-2 bg-zinc-500 rounded-full animate-pulse [animation-delay:300ms]" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
 
@@ -132,7 +167,7 @@ export default function Page() {
           value={digit}
           onChange={(e) => handleChange(idx, e.target.value)}
           onKeyDown={(e) => handleKeyDown(idx, e)}
-          className="w-12 h-14 bg-zinc-900/50 border-zinc-800 rounded-lg text-center text-2xl text-white focus-visible:ring-zinc-400 transition-colors" 
+          className="w-10 h-12 sm:w-12 sm:h-14 bg-zinc-900/50 border-zinc-800 rounded-lg text-center text-xl sm:text-2xl text-white focus-visible:ring-zinc-400 transition-colors" 
           maxLength={1} 
           type="text"
         />
@@ -162,18 +197,6 @@ export default function Page() {
 <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Secure AES-256 Connection</span>
 </CardFooter>
 </Card>
-</div>
-{/*  Shared Map Controls (Repurposed for this screen)  */}
-<div className="fixed bottom-6 right-6 flex flex-col gap-2">
-<Button variant="outline" size="icon" className="w-10 h-10 bg-zinc-950 border-zinc-800 text-white hover:bg-zinc-900 transition-colors">
-<Plus className="w-4 h-4" />
-</Button>
-<Button variant="outline" size="icon" className="w-10 h-10 bg-zinc-950 border-zinc-800 text-white hover:bg-zinc-900 transition-colors">
-<Minus className="w-4 h-4" />
-</Button>
-<Button variant="outline" size="icon" className="w-10 h-10 bg-zinc-950 border-zinc-800 text-white hover:bg-zinc-900 transition-colors mt-4">
-<Navigation className="w-4 h-4" />
-</Button>
 </div>
 </main>
 

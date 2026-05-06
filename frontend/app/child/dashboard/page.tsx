@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Play, Users, Square, VolumeX, PlusCircle, LinkIcon,
   AlertTriangle, Bell, BatteryCharging, Signal,
-  CheckCircle, Copy, X
+  CheckCircle, Copy, X, Menu
 } from 'lucide-react';
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
@@ -20,6 +20,7 @@ export default function Page() {
   const [shareExpiry, setShareExpiry] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -126,14 +127,21 @@ export default function Page() {
   }, []);
 
   return (
-    <>
-      {/* ── Top App Bar (matches parent dashboard style) ─────────────────── */}
-      <header className="flex justify-between items-center w-full px-6 h-14 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 font-medium text-white">
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* ── Top App Bar ─────────────────────────────────────── */}
+      <header className="flex justify-between items-center w-full px-4 sm:px-6 h-14 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 font-medium text-white shrink-0 z-30">
         <div className="flex items-center gap-3">
+          {/* Mobile menu toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden text-zinc-400 hover:text-white transition-colors"
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
           <span className="font-black text-white text-lg tracking-widest uppercase">Drishti</span>
         </div>
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-4 text-zinc-500">
+        <div className="flex items-center gap-3 sm:gap-5">
+          <div className="hidden sm:flex items-center gap-4 text-zinc-500">
             <Bell className="w-5 h-5" />
             <BatteryCharging className="w-5 h-5" />
             <Signal className="w-5 h-5" />
@@ -144,21 +152,35 @@ export default function Page() {
         </div>
       </header>
 
-      {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <main className="w-full h-[calc(100vh-3.5rem-5rem)] flex overflow-hidden">
+      {/* ── Main Content ───────────────────────────────────── */}
+      <main className="flex-1 flex overflow-hidden relative">
+
+        {/* Mobile overlay backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
         {/* LEFT CONTROL COLUMN */}
-        <section className="w-80 border-r border-zinc-800 bg-zinc-950 p-6 flex flex-col gap-6 overflow-y-auto z-10">
+        <section className={`
+          fixed lg:relative inset-y-0 left-0 z-30
+          w-[280px] sm:w-80 border-r border-zinc-800 bg-zinc-950 p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto
+          transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          top-14 lg:top-0
+        `}>
 
           {/* Greeting first, label below */}
           <div>
-            <h2 className="text-2xl font-bold text-white">Welcome, {childName}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Welcome, {childName}</h2>
             <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-1">Current Status</p>
           </div>
 
           {/* Actions */}
           <div className="flex flex-col gap-2">
-            <Button variant="secondary" className="w-full justify-between h-14 rounded-xl font-bold">
+            <Button variant="secondary" className="w-full justify-between h-12 sm:h-14 rounded-xl font-bold">
               <span>Create Trip</span>
               <PlusCircle className="w-5 h-5" />
             </Button>
@@ -167,7 +189,7 @@ export default function Page() {
               <Button
                 variant="outline"
                 onClick={startSharing}
-                className="w-full justify-between h-14 border-emerald-800 text-emerald-400 rounded-xl hover:bg-emerald-900/30 transition-colors"
+                className="w-full justify-between h-12 sm:h-14 border-emerald-800 text-emerald-400 rounded-xl hover:bg-emerald-900/30 transition-colors"
               >
                 <span>Start Sharing Location</span>
                 <Play className="w-5 h-5" />
@@ -176,7 +198,7 @@ export default function Page() {
               <Button
                 variant="outline"
                 onClick={stopSharing}
-                className="w-full justify-between h-14 border-red-800 text-red-400 rounded-xl hover:bg-red-900/30 transition-colors"
+                className="w-full justify-between h-12 sm:h-14 border-red-800 text-red-400 rounded-xl hover:bg-red-900/30 transition-colors"
               >
                 <span>Stop Sharing Location</span>
                 <Square className="w-5 h-5" />
@@ -186,7 +208,7 @@ export default function Page() {
             <Button
               variant="outline"
               onClick={handleShareLink}
-              className="w-full justify-between h-14 border-zinc-800 text-white rounded-xl hover:bg-zinc-900 transition-colors"
+              className="w-full justify-between h-12 sm:h-14 border-zinc-800 text-white rounded-xl hover:bg-zinc-900 transition-colors"
             >
               <span>Share via Link</span>
               <LinkIcon className="w-5 h-5" />
@@ -239,40 +261,40 @@ export default function Page() {
         </section>
       </main>
 
-      {/* ── Bottom Action Bar (h-20, matches parent) ─────────────────────── */}
-      <footer className="fixed bottom-0 right-0 left-0 z-50 flex justify-center gap-4 items-center h-20 px-8 bg-zinc-950 border-t border-zinc-800">
-        <div className="flex-1 flex gap-4">
-          <div className="border border-zinc-800 rounded-md px-5 py-2 flex flex-col items-start">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Location Sharing</span>
+      {/* ── Bottom Action Bar ─────────────────────────────── */}
+      <footer className="shrink-0 z-50 flex flex-col sm:flex-row items-stretch sm:items-center h-auto sm:h-20 px-4 sm:px-8 py-3 sm:py-0 bg-zinc-950 border-t border-zinc-800 gap-3 sm:gap-4">
+        <div className="flex-1 flex gap-3 sm:gap-4 overflow-x-auto">
+          <div className="border border-zinc-800 rounded-md px-3 sm:px-5 py-2 flex flex-col items-start shrink-0">
+            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Location</span>
             <span className={`text-xs font-bold ${sharing ? 'text-emerald-400' : 'text-zinc-400'}`}>
               {sharing ? 'Active' : 'Off'}
             </span>
           </div>
-          <div className="border border-zinc-800 rounded-md px-5 py-2 flex flex-col items-start">
+          <div className="border border-zinc-800 rounded-md px-3 sm:px-5 py-2 flex flex-col items-start shrink-0">
             <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Linked To</span>
             <span className="text-white text-xs font-bold">{parentName}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white transition-all gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="outline" className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white transition-all gap-2 flex-1 sm:flex-none">
             <CheckCircle className="w-4 h-4" />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Safe Check-in</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest hidden sm:inline">Check-in</span>
           </Button>
-          <Button variant="outline" className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white transition-all gap-2">
+          <Button variant="outline" className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white transition-all gap-2 flex-1 sm:flex-none">
             <VolumeX className="w-4 h-4" />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Silent Alert</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest hidden sm:inline">Silent</span>
           </Button>
-          <Button className="h-10 bg-white text-black hover:bg-zinc-200 transition-all gap-2">
+          <Button className="h-10 bg-white text-black hover:bg-zinc-200 transition-all gap-2 flex-1 sm:flex-none">
             <AlertTriangle className="w-4 h-4 text-red-500" />
             <span className="text-[11px] font-bold text-red-500 uppercase tracking-widest">SOS</span>
           </Button>
         </div>
       </footer>
 
-      {/* ── Share Link Modal ──────────────────────────────────────────────── */}
+      {/* ── Share Link Modal ──────────────────────────────── */}
       {showShareModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold text-lg">Share Location Link</h3>
               <button onClick={() => setShowShareModal(false)} className="text-zinc-500 hover:text-white transition-colors">
@@ -309,6 +331,6 @@ export default function Page() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

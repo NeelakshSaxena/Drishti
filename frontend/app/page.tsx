@@ -29,17 +29,17 @@ export default function Page() {
         </div>
 
         {/* Central Shell */}
-        <section className="relative z-10 w-full max-w-4xl px-gutter flex flex-col items-center">
+        <section className="relative z-10 w-full max-w-4xl px-4 sm:px-gutter flex flex-col items-center">
 
           {/* Title */}
-          <div className="text-center mb-xl">
-            <h1 className="font-h1 text-[5rem] md:text-[7rem] text-primary tracking-tighter uppercase">
+          <div className="text-center mb-8 sm:mb-xl">
+            <h1 className="font-h1 text-[3rem] sm:text-[5rem] md:text-[7rem] text-primary tracking-tighter uppercase">
               DRISHTI
             </h1>
           </div>
 
           {/* Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full">
 
             {/* Parent */}
             <Card className="group bg-zinc-950/60 backdrop-blur-md hover:border-zinc-500 transition-all duration-300 flex flex-col justify-between shadow-none">

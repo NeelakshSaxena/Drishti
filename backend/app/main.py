@@ -5,7 +5,7 @@ import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import process, management, family
+from app.routes import process, management, family, admin
 from app.services import storage
 
 # Configure logging
@@ -46,6 +46,7 @@ app.add_middleware(
 app.include_router(process.router, prefix="/process", tags=["process"])
 app.include_router(management.router, tags=["management"])
 app.include_router(family.router, prefix="/family", tags=["family"])
+app.include_router(admin.router, prefix="/root", tags=["admin"])
 
 
 @app.on_event("startup")

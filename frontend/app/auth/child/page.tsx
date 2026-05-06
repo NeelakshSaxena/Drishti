@@ -19,6 +19,7 @@ export default function Page() {
     if (c) setCode(c);
   }, []);
 
+  // Check link status on mount AND periodically
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
@@ -32,15 +33,17 @@ export default function Page() {
                 const data = await res.json();
                 if (data.parent_name) {
                     setParentName(data.parent_name);
-                    setTimeout(() => {
-                        router.push('/child/dashboard');
-                    }, 2000);
+                    // If already linked, go straight to dashboard
+                    router.push('/child/dashboard');
                 }
             }
         } catch (e) {
             console.error(e);
         }
     };
+
+    // Check immediately on mount
+    checkLinkStatus();
 
     if (!parentName) {
         intervalId = setInterval(checkLinkStatus, 2000);
@@ -103,8 +106,8 @@ export default function Page() {
     <>
     <div className="flex justify-center items-center gap-2">
       {displayCode.split('').slice(0, 6).map((char, idx) => (
-          <div key={idx} className="w-12 h-16 flex items-center justify-center border border-zinc-800 rounded-lg bg-zinc-900/50">
-            <span className="text-2xl font-bold text-white">{char}</span>
+          <div key={idx} className="w-10 h-14 sm:w-12 sm:h-16 flex items-center justify-center border border-zinc-800 rounded-lg bg-zinc-900/50">
+            <span className="text-xl sm:text-2xl font-bold text-white">{char}</span>
           </div>
       ))}
     </div>

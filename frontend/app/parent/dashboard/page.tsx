@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Bell, BatteryCharging, Signal, RefreshCw, Clock, Footprints } from 'lucide-react';
+import { Bell, BatteryCharging, Signal, RefreshCw, Clock, Footprints, Menu, X, Map as MapIcon } from 'lucide-react';
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
 
@@ -12,6 +12,7 @@ export default function Page() {
   const [selectedChild, setSelectedChild] = useState<any | null>(null);
   const [lastPing, setLastPing] = useState<string>('—');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchDashboard = async () => {
     const parentId = localStorage.getItem('parent_id');
@@ -53,12 +54,21 @@ export default function Page() {
   const displayLocation = childLocation ?? lastRecordedLocation ?? null;
 
   return (
-    <>
-      {/* Top App Bar – identical structure to child dashboard */}
-      <header className="flex justify-between items-center w-full px-6 h-14 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 text-white">
-        <span className="font-black text-lg tracking-widest uppercase">Drishti</span>
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-4 text-zinc-500">
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* Top App Bar */}
+      <header className="flex justify-between items-center w-full px-4 sm:px-6 h-14 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 text-white shrink-0 z-30">
+        <div className="flex items-center gap-3">
+          {/* Mobile menu toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden text-zinc-400 hover:text-white transition-colors"
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <span className="font-black text-lg tracking-widest uppercase">Drishti</span>
+        </div>
+        <div className="flex items-center gap-3 sm:gap-5">
+          <div className="hidden sm:flex items-center gap-4 text-zinc-500">
             <Bell className="w-5 h-5" />
             <BatteryCharging className="w-5 h-5" />
             <Signal className="w-5 h-5" />
@@ -69,11 +79,27 @@ export default function Page() {
         </div>
       </header>
 
-      <main className="w-full h-[calc(100vh-3.5rem-5rem)] flex overflow-hidden">
-        {/* Left column */}
-        <section className="w-80 border-r border-zinc-800 p-6 flex flex-col gap-6 overflow-y-auto bg-zinc-950">
+      {/* Main Content */}
+      <main className="flex-1 flex overflow-hidden relative">
+
+        {/* Mobile overlay backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Left column / sidebar */}
+        <section className={`
+          fixed lg:relative inset-y-0 left-0 z-30
+          w-[280px] sm:w-80 border-r border-zinc-800 p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto bg-zinc-950
+          transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          top-14 lg:top-0
+        `}>
           <div>
-            <h2 className="text-2xl font-bold text-white">Welcome, {parentName}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Welcome, {parentName}</h2>
             <p className="text-zinc-500 text-sm mt-1">Monitor active movements in real-time.</p>
           </div>
 
@@ -92,7 +118,7 @@ export default function Page() {
 
           {/* Child status */}
           {selectedChild && (
-            <div className="border border-zinc-800 rounded-xl p-5 space-y-3">
+            <div className="border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                 <span className="text-[10px] text-white uppercase tracking-widest font-bold">Child Status</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${childIsSharing ? 'bg-emerald-900 text-emerald-400' : lastRecordedLocation ? 'bg-amber-900/50 text-amber-400' : 'bg-zinc-800 text-zinc-400'}`}>
@@ -169,29 +195,29 @@ export default function Page() {
         </section>
       </main>
 
-      {/* Bottom bar – h-20, matches child */}
-      <footer className="fixed bottom-0 right-0 left-0 z-50 flex items-center h-20 px-8 bg-zinc-950 border-t border-zinc-800 gap-4">
-        <div className="flex-1 flex gap-4">
-          <div className="border border-zinc-800 rounded-md px-5 py-2 flex flex-col items-start">
+      {/* Bottom bar */}
+      <footer className="shrink-0 z-50 flex flex-col sm:flex-row items-stretch sm:items-center h-auto sm:h-20 px-4 sm:px-8 py-3 sm:py-0 bg-zinc-950 border-t border-zinc-800 gap-3 sm:gap-4">
+        <div className="flex-1 flex gap-3 sm:gap-4 overflow-x-auto">
+          <div className="border border-zinc-800 rounded-md px-3 sm:px-5 py-2 flex flex-col items-start shrink-0">
             <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Last Ping</span>
             <span className="text-white text-xs font-bold">{lastPing}</span>
           </div>
-          <div className="border border-zinc-800 rounded-md px-5 py-2 flex flex-col items-start">
+          <div className="border border-zinc-800 rounded-md px-3 sm:px-5 py-2 flex flex-col items-start shrink-0">
             <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Monitoring</span>
             <span className="text-white text-xs font-bold">{selectedChild?.name ?? 'No child'}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={fetchDashboard} className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="outline" onClick={fetchDashboard} className="h-10 border-zinc-800 text-zinc-400 hover:border-white hover:text-white gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
             <RefreshCw className="w-4 h-4" />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Refresh</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest hidden sm:inline">Refresh</span>
           </Button>
-          <Button className="h-10 bg-white text-black hover:bg-zinc-200 gap-2">
+          <Button className="h-10 bg-white text-black hover:bg-zinc-200 gap-2 flex-1 sm:flex-none">
             <Bell className="w-4 h-4 text-red-500" />
-            <span className="text-[11px] font-bold text-black uppercase tracking-widest">Send Notification</span>
+            <span className="text-[11px] font-bold text-black uppercase tracking-widest">Notify</span>
           </Button>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
