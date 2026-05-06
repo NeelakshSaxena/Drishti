@@ -10,6 +10,7 @@ from datetime import timedelta
 import hashlib
 import json
 import os
+import socket
 import uuid
 import logging
 import string
@@ -41,18 +42,54 @@ if not DB_HOST or not DB_PASSWORD:
     )
 
 
+def _resolve_db_addresses() -> list[str]:
+    """Resolve the DB host and prefer IPv4 addresses if available."""
+    addresses = []
+    try:
+        addresses = [
+            addr[4][0]
+            for addr in socket.getaddrinfo(
+                DB_HOST,
+                DB_PORT,
+                family=socket.AF_UNSPEC,
+                type=socket.SOCK_STREAM,
+            )
+        ]
+    except socket.gaierror:
+        return []
+
+    # Prefer IPv4 first, then IPv6.
+    ipv4 = [addr for addr in addresses if "." in addr]
+    ipv6 = [addr for addr in addresses if ":" in addr]
+    return ipv4 + ipv6
+
+
 def get_db():
     """Return a new PostgreSQL connection."""
-    conn = psycopg2.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        sslmode="require",
-    )
-    conn.autocommit = False
-    return conn
+    addresses = _resolve_db_addresses()
+    if not addresses:
+        raise RuntimeError(
+            f"Unable to resolve DB_HOST={DB_HOST}. "
+            "Check your network/DNS or env configuration."
+        )
+
+    last_error = None
+    for addr in addresses:
+        try:
+            conn = psycopg2.connect(
+                host=addr,
+                port=DB_PORT,
+                dbname=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD,
+                sslmode="require",
+            )
+            conn.autocommit = False
+            return conn
+        except Exception as exc:
+            last_error = exc
+
+    raise last_error
 
 
 def _execute(query: str, params: tuple = (), *, fetch: str = "none") -> Any:
