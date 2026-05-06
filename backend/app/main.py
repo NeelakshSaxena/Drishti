@@ -2,6 +2,12 @@ import os
 import logging
 import sys
 
+from dotenv import load_dotenv
+
+# Load .env from the backend directory (one level up from app/)
+_backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+load_dotenv(os.path.join(_backend_dir, ".env"))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

@@ -3,15 +3,18 @@ Root admin routes — protected by a hardcoded root password.
 Provides full oversight of every parent & child in the system.
 """
 
+import os
 import logging
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
 from app.services import storage
 
+import psycopg2.extras
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-ROOT_PASSWORD = "claudewashere"
+ROOT_PASSWORD = os.getenv("ROOT_PASSWORD", "claudewashere")
 
 
 # ── Auth helper ───────────────────────────────────────────────────────────────
@@ -50,24 +53,28 @@ def list_all_parents(x_root_token: str = Header(None)):
     """Return every parent with their linked children (full detail)."""
     _verify_root(x_root_token)
     conn = storage.get_db()
-    rows = conn.execute("SELECT * FROM parents").fetchall()
-    conn.close()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM parents")
+            rows = cur.fetchall()
 
-    results = []
-    for row in rows:
-        parent = storage.parent_row_to_dict(row)
-        # Resolve linked children
-        children = []
-        for cid in parent.get("linked_children", []):
-            child = storage.get_child(cid)
-            if child:
-                # Strip password hash from response
-                child.pop("password", None)
-                children.append(child)
-        parent.pop("password", None)
-        parent["children_detail"] = children
-        results.append(parent)
-    return {"parents": results}
+        results = []
+        for row in rows:
+            parent = storage.parent_row_to_dict(row)
+            # Resolve linked children
+            children = []
+            for cid in parent.get("linked_children", []):
+                child = storage.get_child(cid)
+                if child:
+                    # Strip password hash from response
+                    child.pop("password", None)
+                    children.append(child)
+            parent.pop("password", None)
+            parent["children_detail"] = children
+            results.append(parent)
+        return {"parents": results}
+    finally:
+        conn.close()
 
 
 @router.get("/children")
@@ -75,22 +82,26 @@ def list_all_children(x_root_token: str = Header(None)):
     """Return every child in the system."""
     _verify_root(x_root_token)
     conn = storage.get_db()
-    rows = conn.execute("SELECT * FROM children").fetchall()
-    conn.close()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM children")
+            rows = cur.fetchall()
 
-    results = []
-    for row in rows:
-        child = storage.child_row_to_dict(row)
-        if child:
-            child.pop("password", None)
-            # Resolve parent name
-            if child.get("parent_id"):
-                parent = storage.get_parent(child["parent_id"])
-                child["parent_name"] = parent.get("name") if parent else None
-            else:
-                child["parent_name"] = None
-            results.append(child)
-    return {"children": results}
+        results = []
+        for row in rows:
+            child = storage.child_row_to_dict(row)
+            if child:
+                child.pop("password", None)
+                # Resolve parent name
+                if child.get("parent_id"):
+                    parent = storage.get_parent(child["parent_id"])
+                    child["parent_name"] = parent.get("name") if parent else None
+                else:
+                    child["parent_name"] = None
+                results.append(child)
+        return {"children": results}
+    finally:
+        conn.close()
 
 
 @router.get("/overview")
@@ -98,23 +109,26 @@ def admin_overview(x_root_token: str = Header(None)):
     """High-level statistics."""
     _verify_root(x_root_token)
     conn = storage.get_db()
-    parent_count = conn.execute("SELECT COUNT(*) FROM parents").fetchone()[0]
-    child_count = conn.execute("SELECT COUNT(*) FROM children").fetchone()[0]
-    linked_count = conn.execute(
-        "SELECT COUNT(*) FROM children WHERE parent_id IS NOT NULL"
-    ).fetchone()[0]
-    sharing_count = conn.execute(
-        "SELECT COUNT(*) FROM children WHERE is_sharing = 1"
-    ).fetchone()[0]
-    conn.close()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM parents")
+            parent_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM children")
+            child_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM children WHERE parent_id IS NOT NULL")
+            linked_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM children WHERE is_sharing = 1")
+            sharing_count = cur.fetchone()[0]
 
-    return {
-        "total_parents": parent_count,
-        "total_children": child_count,
-        "linked_children": linked_count,
-        "unlinked_children": child_count - linked_count,
-        "actively_sharing": sharing_count,
-    }
+        return {
+            "total_parents": parent_count,
+            "total_children": child_count,
+            "linked_children": linked_count,
+            "unlinked_children": child_count - linked_count,
+            "actively_sharing": sharing_count,
+        }
+    finally:
+        conn.close()
 
 
 # ── Password management ─────────────────────────────────────────────────────
@@ -126,27 +140,31 @@ def change_user_password(req: ChangePasswordRequest, x_root_token: str = Header(
 
     new_hash = storage.hash_password(req.new_password)
     conn = storage.get_db()
+    try:
+        with conn.cursor() as cur:
+            if req.user_type == "parent":
+                cur.execute("SELECT id FROM parents WHERE id = %s", (req.user_id,))
+                if not cur.fetchone():
+                    raise HTTPException(status_code=404, detail="Parent not found")
+                cur.execute("UPDATE parents SET password = %s WHERE id = %s", (new_hash, req.user_id))
+            elif req.user_type == "child":
+                cur.execute("SELECT id FROM children WHERE id = %s", (req.user_id,))
+                if not cur.fetchone():
+                    raise HTTPException(status_code=404, detail="Child not found")
+                cur.execute("UPDATE children SET password = %s WHERE id = %s", (new_hash, req.user_id))
+            else:
+                raise HTTPException(status_code=400, detail="user_type must be 'parent' or 'child'")
 
-    if req.user_type == "parent":
-        c = conn.execute("SELECT id FROM parents WHERE id = ?", (req.user_id,))
-        if not c.fetchone():
-            conn.close()
-            raise HTTPException(status_code=404, detail="Parent not found")
-        conn.execute("UPDATE parents SET password = ? WHERE id = ?", (new_hash, req.user_id))
-    elif req.user_type == "child":
-        c = conn.execute("SELECT id FROM children WHERE id = ?", (req.user_id,))
-        if not c.fetchone():
-            conn.close()
-            raise HTTPException(status_code=404, detail="Child not found")
-        conn.execute("UPDATE children SET password = ? WHERE id = ?", (new_hash, req.user_id))
-    else:
+        conn.commit()
+        logger.info(f"Root changed password for {req.user_type} {req.user_id}")
+        return {"success": True, "message": f"Password updated for {req.user_type} {req.user_id}"}
+    except HTTPException:
+        raise
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
         conn.close()
-        raise HTTPException(status_code=400, detail="user_type must be 'parent' or 'child'")
-
-    conn.commit()
-    conn.close()
-    logger.info(f"Root changed password for {req.user_type} {req.user_id}")
-    return {"success": True, "message": f"Password updated for {req.user_type} {req.user_id}"}
 
 
 # ── Location lookup ──────────────────────────────────────────────────────────

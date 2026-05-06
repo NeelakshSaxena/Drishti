@@ -4,22 +4,45 @@ import { Button } from "@/components/ui/button";
 import { Bell, BatteryCharging, Signal, RefreshCw, Clock, Footprints, Menu, X, Map as MapIcon } from 'lucide-react';
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
 
 export default function Page() {
+  const router = useRouter();
   const [parentName, setParentName] = useState<string>('Parent');
   const [selectedChild, setSelectedChild] = useState<any | null>(null);
   const [lastPing, setLastPing] = useState<string>('—');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const clearSession = () => {
+    localStorage.removeItem('parent_id');
+    localStorage.removeItem('parent_name');
+    sessionStorage.removeItem('parent_id');
+    sessionStorage.removeItem('parent_name');
+  };
+
   const fetchDashboard = async () => {
-    const parentId = localStorage.getItem('parent_id');
-    if (!parentId) return;
+    const parentId = localStorage.getItem('parent_id') || sessionStorage.getItem('parent_id');
+    if (!parentId) {
+      router.push('/register/parent');
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/family/parent/dashboard?parent_id=${parentId}`);
+      if (!res.ok) {
+        // Parent no longer exists in backend — session is stale
+        clearSession();
+        router.push('/register/parent');
+        return;
+      }
       const data = await res.json();
+      if (!data.parent) {
+        clearSession();
+        router.push('/register/parent');
+        return;
+      }
       if (data.parent?.name) setParentName(data.parent.name);
       if (data.linked_children?.length > 0) {
         setSelectedChild((prev: any) => {
@@ -32,7 +55,7 @@ export default function Page() {
   };
 
   useEffect(() => {
-    const name = localStorage.getItem('parent_name');
+    const name = localStorage.getItem('parent_name') || sessionStorage.getItem('parent_name');
     if (name) setParentName(name);
     fetchDashboard();
     intervalRef.current = setInterval(fetchDashboard, 5000);

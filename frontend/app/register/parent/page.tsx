@@ -42,9 +42,35 @@ export default function Page() {
 
   // ── Auto-redirect for already-authenticated users ──────────────────
   useEffect(() => {
-    const parentId = localStorage.getItem('parent_id');
+    const parentId = localStorage.getItem('parent_id') || sessionStorage.getItem('parent_id');
     if (parentId) {
-      resolveParentDestination(parentId).then((dest) => router.push(dest));
+      // Validate that the parent still exists in the backend (DB may have been wiped on redeploy)
+      fetch(`${API_URL}/family/parent/dashboard?parent_id=${parentId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('not found');
+          return res.json();
+        })
+        .then(data => {
+          if (data.parent) {
+            const dest = data.linked_children?.length > 0 ? '/parent/dashboard' : '/parent/link-child';
+            router.push(dest);
+          } else {
+            // Parent no longer exists in backend — clear stale session
+            localStorage.removeItem('parent_id');
+            localStorage.removeItem('parent_name');
+            sessionStorage.removeItem('parent_id');
+            sessionStorage.removeItem('parent_name');
+            setChecking(false);
+          }
+        })
+        .catch(() => {
+          // Backend unreachable or parent not found — clear stale session
+          localStorage.removeItem('parent_id');
+          localStorage.removeItem('parent_name');
+          sessionStorage.removeItem('parent_id');
+          sessionStorage.removeItem('parent_name');
+          setChecking(false);
+        });
     } else {
       setChecking(false);
     }
@@ -76,8 +102,7 @@ export default function Page() {
           const dest = await resolveParentDestination(data.parent_id);
           router.push(dest);
         } else {
-          setErrorMsg(data.message || 'Account not found. Please create an account.');
-          setIsLoginMode(false);
+          setErrorMsg(data.message || 'Invalid email or password. Please try again.');
         }
       } else {
         const res = await fetch(`${API_URL}/family/parent/init`, {

@@ -21,22 +21,40 @@ export default function Page() {
 
   // ── Auto-redirect if parent already has linked children ────────────
   useEffect(() => {
-    const parentId = localStorage.getItem('parent_id');
+    const parentId = localStorage.getItem('parent_id') || sessionStorage.getItem('parent_id');
     if (!parentId) {
-      setChecking(false);
+      // No session — redirect to login
+      router.push('/register/parent');
       return;
     }
     (async () => {
       try {
         const res = await fetch(`${API_URL}/family/parent/dashboard?parent_id=${parentId}`);
-        if (res.ok) {
-          const data = await res.json();
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+        if (data.parent) {
           if (data.linked_children && data.linked_children.length > 0) {
             router.push('/parent/dashboard');
             return;
           }
+        } else {
+          // Parent no longer exists — clear stale session
+          localStorage.removeItem('parent_id');
+          localStorage.removeItem('parent_name');
+          sessionStorage.removeItem('parent_id');
+          sessionStorage.removeItem('parent_name');
+          router.push('/register/parent');
+          return;
         }
-      } catch { /* ignore */ }
+      } catch {
+        // Backend unreachable or parent deleted — clear stale session
+        localStorage.removeItem('parent_id');
+        localStorage.removeItem('parent_name');
+        sessionStorage.removeItem('parent_id');
+        sessionStorage.removeItem('parent_name');
+        router.push('/register/parent');
+        return;
+      }
       setChecking(false);
     })();
   }, [router]);
