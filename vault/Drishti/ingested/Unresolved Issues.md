@@ -1,7 +1,7 @@
----\ntitle: Unresolved Issues\nphase: Phase_AudioStreaming\ngenerated: 2026-06-12T08:27:38Z\nrelated:\n  - [[Verification Report]]\n  - [[Changed Files List]]\n---\n\n# Unresolved Issues
+---\ntitle: Unresolved Issues\nphase: Phase_DeviceOnboarding\ngenerated: 2026-06-12T08:30:39Z\nrelated:\n  - [[Verification Report]]\n  - [[Changed Files List]]\n---\n\n# Unresolved Issues
 
-- The `WakeWordEngine` is currently a naive amplitude tracker. It must be swapped with an actual ONNX/TFLite model or Porcupine instance to recognize specific keywords (e.g. "Hey Drishti") without false positives.
-- `android.permission.RECORD_AUDIO` requires a runtime permission prompt on modern Android versions, which needs to be added to the MainActivity onboarding flow.
+- The physical camera view for the `QrScanner` UI has not been implemented. We rely on a programmatic JSON string injection to test `OnboardingManager.processQrPayload()`.
+- The FastAPI backend currently uses in-memory dicts (`DEVICE_DB`) which will wipe upon server restart. Must integrate with Postgres/SQLAlchemy.
 
 Related:
 - [[Verification Report]]

@@ -1,6 +1,6 @@
----\ntitle: Implementation Summary\nphase: Phase_AudioStreaming\ngenerated: 2026-06-12T08:27:38Z\nrelated:\n  - [[Architecture Notes]]\n  - [[Changed Files List]]\n---\n\n# Implementation Summary
+---\ntitle: Implementation Summary\nphase: Phase_DeviceOnboarding\ngenerated: 2026-06-12T08:30:39Z\nrelated:\n  - [[Architecture Notes]]\n  - [[Changed Files List]]\n---\n\n# Implementation Summary
 
-The wake-word and audio streaming subsystem has been implemented. `AudioCollector` runs in the foreground service, constantly buffering 16kHz PCM audio. The `WakeWordEngine` passively monitors the buffer. Upon detection, it toggles streaming mode, encoding chunks in base64 and forwarding them to `WebSocketManager`. The `VadEngine` actively monitors voice energy, automatically terminating the stream when silence crosses the threshold, fulfilling the requirement to *NOT continuously stream audio*.
+The device onboarding flow has been implemented across the Android Node and Python Backend. It features an `OnboardingManager` that processes a mocked QR JSON payload containing a pairing code and endpoint. It handles credential exchange securely, persists the token using `SharedPreferences` via the upgraded `AuthTokenManager`, and triggers a capability sync utilizing `PermissionHelper` to report real-time permission health to the backend.
 
 Related:
 - [[Architecture Notes]]

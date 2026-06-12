@@ -17,6 +17,7 @@ import com.drishti.node.permissions.PrivacyManager
 import com.drishti.node.audio.WakeWordEngine
 import com.drishti.node.audio.VadEngine
 import com.drishti.node.audio.AudioCollector
+import com.drishti.node.onboarding.OnboardingManager
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -30,8 +31,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthTokenManager(): AuthTokenManager {
-        return AuthTokenManager()
+    fun provideAuthTokenManager(@ApplicationContext context: Context): AuthTokenManager {
+        return AuthTokenManager(context)
     }
 
     @Provides
@@ -77,6 +78,15 @@ object AppModule {
         vadEngine: VadEngine
     ): AudioCollector {
         return AudioCollector(context, permissionHelper, webSocketManager, wakeWordEngine, vadEngine)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnboardingManager(
+        authTokenManager: AuthTokenManager,
+        permissionHelper: PermissionHelper
+    ): OnboardingManager {
+        return OnboardingManager(authTokenManager, permissionHelper)
     }
 
     @Provides
