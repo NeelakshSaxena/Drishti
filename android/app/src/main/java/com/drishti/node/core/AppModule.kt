@@ -13,6 +13,7 @@ import com.drishti.node.networking.AuthTokenManager
 import com.drishti.node.telemetry.TelemetryManager
 import com.drishti.node.telemetry.collectors.*
 import com.drishti.node.permissions.PermissionHelper
+import com.drishti.node.permissions.PrivacyManager
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -47,6 +48,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun providePrivacyManager(): PrivacyManager {
+        return PrivacyManager()
+    }
+
+    @Provides
+    @Singleton
     fun provideTelemetryManager(
         @ApplicationContext context: Context,
         webSocketManager: WebSocketManager,
@@ -58,7 +65,8 @@ object AppModule {
             ScreenStateCollector(context),
             LocationCollector(context, permissionHelper),
             BluetoothCollector(context),
-            MediaPlaybackCollector(context)
+            NotificationCollector(),
+            MediaPlaybackCollector()
         )
         return TelemetryManager(collectors, webSocketManager)
     }

@@ -6,14 +6,14 @@ import com.drishti.node.telemetry.models.TelemetryEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 
-class MediaPlaybackCollector : TelemetryCollector {
-    override val name = "media"
+class NotificationCollector : TelemetryCollector {
+    override val name = "notification"
     override var isEnabled = true
 
     override fun setEnabled(enabled: Boolean) { isEnabled = enabled }
 
     override fun startCollecting(): Flow<TelemetryEvent> {
-        return NotificationEventBus.events.filter { it.type == "media_session" }
+        return NotificationEventBus.events.filter { it.type == "notification" }
     }
     
     override fun stopCollecting() {}

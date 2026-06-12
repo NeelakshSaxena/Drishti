@@ -181,6 +181,11 @@
   },
   "active": "2584b40ad2a2cc37",
   "lastOpenFiles": [
+    "rollback/PHASE_NOTIFICATION_ROLLBACK.md",
+    "verification/PHASE_NOTIFICATION_VERIFICATION.md",
+    "phase-reports/PHASE_NOTIFICATION.md",
+    "raw/android/telemetry-logs/notification_spam_test.log",
+    "ingested/android/notification_framework.md",
     "rollback/PHASE_TELEMETRY_ROLLBACK.md",
     "verification/PHASE_TELEMETRY_VERIFICATION.md",
     "phase-reports/PHASE_TELEMETRY.md",
@@ -209,10 +214,6 @@
     "verification/PHASE_D3_VERIFICATION.md",
     "phase-reports/PHASE_D3.md",
     "ingested/backend/device-gateway.md",
-    "raw/logs/device-gateway-implementation.md",
-    "rollback/PHASE_D2_ROLLBACK.md",
-    "verification/PHASE_D2_VERIFICATION.md",
-    "phase-reports/PHASE_D2.md",
     "ingested/backend",
     "raw/logs"
   ]
