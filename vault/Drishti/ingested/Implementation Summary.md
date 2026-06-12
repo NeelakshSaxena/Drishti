@@ -1,6 +1,6 @@
----\ntitle: Implementation Summary\nphase: Phase_DeviceOnboarding\ngenerated: 2026-06-12T08:30:39Z\nrelated:\n  - [[Architecture Notes]]\n  - [[Changed Files List]]\n---\n\n# Implementation Summary
+---\ntitle: Implementation Summary\nphase: Phase_ProductionSecurity\ngenerated: 2026-06-12T08:34:56Z\nrelated:\n  - [[Architecture Notes]]\n  - [[Changed Files List]]\n---\n\n# Implementation Summary
 
-The device onboarding flow has been implemented across the Android Node and Python Backend. It features an `OnboardingManager` that processes a mocked QR JSON payload containing a pairing code and endpoint. It handles credential exchange securely, persists the token using `SharedPreferences` via the upgraded `AuthTokenManager`, and triggers a capability sync utilizing `PermissionHelper` to report real-time permission health to the backend.
+Production-grade security has been integrated into the node and backend. Network traffic strictly mandates `WSS` and `HTTPS`. `OkHttp` implements `CertificatePinner` to prevent MITM attacks. Payloads are securely signed via HMAC-SHA256, alongside a cryptographic nonce and a strict 5000ms timestamp window providing replay protection. Credentials have been migrated to Android's `EncryptedSharedPreferences`, and token rotation logic is baked into the connection handshake.
 
 Related:
 - [[Architecture Notes]]

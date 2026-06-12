@@ -1,7 +1,7 @@
----\ntitle: Unresolved Issues\nphase: Phase_DeviceOnboarding\ngenerated: 2026-06-12T08:30:39Z\nrelated:\n  - [[Verification Report]]\n  - [[Changed Files List]]\n---\n\n# Unresolved Issues
+---\ntitle: Unresolved Issues\nphase: Phase_ProductionSecurity\ngenerated: 2026-06-12T08:34:56Z\nrelated:\n  - [[Verification Report]]\n  - [[Changed Files List]]\n---\n\n# Unresolved Issues
 
-- The physical camera view for the `QrScanner` UI has not been implemented. We rely on a programmatic JSON string injection to test `OnboardingManager.processQrPayload()`.
-- The FastAPI backend currently uses in-memory dicts (`DEVICE_DB`) which will wipe upon server restart. Must integrate with Postgres/SQLAlchemy.
+- The `CERT_PIN` in `Constants.kt` currently holds a placeholder hash (`AAAAAAAA...`). Needs replacement with the actual production leaf certificate hash prior to public release.
+- Backend `USED_NONCES` tracking is stored in memory, which resets on pod restarts. Needs a fast Redis cache with a 5-second TTL.
 
 Related:
 - [[Verification Report]]

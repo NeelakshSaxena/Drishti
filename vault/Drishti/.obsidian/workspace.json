@@ -181,6 +181,8 @@
   },
   "active": "2584b40ad2a2cc37",
   "lastOpenFiles": [
+    "raw/security/security_trace.log",
+    "raw/security",
     "raw/onboarding/onboarding_trace.log",
     "raw/onboarding",
     "raw/audio/audio_stream_trace.log",
@@ -210,8 +212,6 @@
     "rollback/PHASE_ANDROID_ROLLBACK.md",
     "verification/PHASE_ANDROID_VERIFICATION.md",
     "phase-reports/PHASE_ANDROID.md",
-    "raw/android/build-logs/mock_build.log",
-    "raw/android/build-logs",
     "ingested/android/bootstrap.md",
     "rollback/PHASE_D5_ROLLBACK.md",
     "verification/PHASE_D5_VERIFICATION.md",

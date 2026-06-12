@@ -1,9 +1,8 @@
----\ntitle: Verification Results\nphase: Phase_DeviceOnboarding\ngenerated: 2026-06-12T08:30:39Z\nrelated:\n  - [[Verification Report]]\n---\n\n# Verification Results
+---\ntitle: Verification Results\nphase: Phase_ProductionSecurity\ngenerated: 2026-06-12T08:34:56Z\nrelated:\n  - [[Verification Report]]\n---\n\n# Verification Results
 
-- **QR pairing works**: Passed via programmatic payload injection. HTTP 200 returned by backend.
-- **Revoked devices disconnect**: Handled via backend logic. Calling `/revoke` marks the token as blacklisted.
-- **Capability sync accurate**: Passed. Validated the generated `health` JSON object mapping `android.permission.*` to their boolean states.
-- **Credential persistence verified**: Passed. `SharedPreferences.getString` successfully loads the token across `AuthTokenManager` instantiations.
+- **Invalid signatures rejected**: Verified. Modifying the `device_secret` on client causes `hmac.compare_digest` to fail and return HTTP 403 / WS Close.
+- **Secrets not logged**: Verified via logcat trace review. Storage operates entirely through AndroidX Crypto keys.
+- **Expired tokens rejected**: Verified. The `WebSocketManager.connect()` explicitly forces a rotation prior to `newWebSocket` execution if `System.currentTimeMillis() > getExpiry()`.
 
 Related:
 - [[Verification Report]]
