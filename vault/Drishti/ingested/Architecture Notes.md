@@ -1,22 +1,17 @@
----\ntitle: Architecture Notes
-type: document
-created: '2026-06-12T08:41:38Z'
-vault: Drishti
-tags:
-- drishti
+---
+title: Architecture Notes
+phase: A8
+generated: 2026-06-12T09:59:33+05:30
 related:
-- '[[Architecture Report]]'
-- '[[Changed Files List]]'
-- '[[Implementation Summary]]'
-- '[[Phase Report]]'
----\n\n\n\n# Architecture Notes
+  - [[Implementation Summary]]
+  - [[Changed Files List]]
+  - [[UNRESOLVED_BLOCKERS]]
+  - [[Phase Report]]
+---
+# Architecture Notes
 
-- **End-to-End Flow**: Android device boot triggers `BootReceiver`, kicking off `NodeForegroundService`. The service loads keys from `EncryptedSharedPreferences`, authenticates via WSS to `/api/device/sync`, and spins up `TelemetryManager` and `AudioCollector`. Backend stores this in `TemporalStore` making it queryable by agents.
-- **Offline Recovery**: Disconnects trigger `OfflineQueue` logic. Android drops into an exponential backoff loop while WorkManager's `HeartbeatWorker` periodically tries to force reconnection on network-state broadcast intent.
-- **Command Dispatch**: The backend sends structured JSON via WSS. `CommandRouting` processes it on Android, performing actions like capability toggles without restarting the service.
-
-Related:
-- [[Implementation Summary]]
-- [[Changed Files List]]
-- [[Phase Report]]
-- [[Architecture Report]]\n\n---\n\n## Related Documents\n- [[Architecture Report]]\n- [[Changed Files List]]\n- [[Implementation Summary]]\n- [[Phase Report]]\n\n## Referenced By\n- [[Architecture Report]]\n- [[Changed Files List]]\n- [[Implementation Summary]]\n- [[Phase Index]]\n- [[Phase Report]]\n
+The Android Node follows standard Android best practices:
+- **Build System**: Kotlin DSL (`*.gradle.kts`) with version pinning for deterministic builds.
+- **Dependency Injection**: Hilt is used natively via `DrishtiApplication` and Worker Factories.
+- **Resource Management**: Extracted missing resources (themes, icons) to satisfy AAPT linkings.
+- **Telemetry Configuration**: The collectors utilize Kotlin Flows instead of JVM-specific setter functions, simplifying the interface and resolving JVM signature collisions on `isEnabled`.

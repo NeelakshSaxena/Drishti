@@ -15,8 +15,6 @@ class LocationCollector(
     override val name = "location"
     override var isEnabled = true
 
-    override fun setEnabled(enabled: Boolean) { isEnabled = enabled }
-
     override fun startCollecting(): Flow<TelemetryEvent> = flow {
         while(true) {
             if (isEnabled && permissionHelper.hasPermission("android.permission.ACCESS_COARSE_LOCATION")) {

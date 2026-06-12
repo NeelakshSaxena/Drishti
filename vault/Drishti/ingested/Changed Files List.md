@@ -1,18 +1,25 @@
----\ntitle: Changed Files List
-type: document
-created: '2026-06-12T08:41:38Z'
-vault: Drishti
-tags:
-- drishti
+---
+title: Changed Files List
+phase: A8
+generated: 2026-06-12T09:59:33+05:30
 related:
-- '[[Architecture Notes]]'
-- '[[Implementation Summary]]'
-- '[[Unresolved Issues]]'
----\n\n\n\n# Changed Files List
+  - [[Implementation Summary]]
+  - [[Architecture Notes]]
+---
+# Changed Files List
 
-- `g:\Projects\Drishti\vault\Drishti\raw\validation\full_system_test_suite.log` (New test logs generated during validation simulation)
-
-Related:
-- [[Implementation Summary]]
-- [[Architecture Notes]]
-- [[Unresolved Issues]]\n\n---\n\n## Related Documents\n- [[Architecture Notes]]\n- [[Implementation Summary]]\n- [[Unresolved Issues]]\n\n## Referenced By\n- [[Architecture Notes]]\n- [[Implementation Summary]]\n- [[Phase Index]]\n- [[Unresolved Issues]]\n
+- `android/settings.gradle.kts`
+- `android/build.gradle.kts`
+- `android/app/build.gradle.kts`
+- `android/gradle.properties`
+- `setup_toolchain.ps1`
+- `setup_android_sdk.ps1`
+- `run_gradle.ps1`
+- `android/app/src/main/AndroidManifest.xml`
+- `android/app/src/main/java/com/drishti/node/DrishtiApplication.kt`
+- `android/app/src/main/java/com/drishti/node/onboarding/OnboardingManager.kt`
+- `android/app/src/main/java/com/drishti/node/telemetry/TelemetryCollector.kt`
+- `android/app/src/main/java/com/drishti/node/telemetry/collectors/*Collector.kt`
+- `android/app/src/main/res/values/themes.xml`
+- `android/app/src/main/res/values/colors.xml`
+- `android/app/src/main/res/mipmap/ic_launcher.xml`

@@ -10,8 +10,6 @@ class NotificationCollector : TelemetryCollector {
     override val name = "notification"
     override var isEnabled = true
 
-    override fun setEnabled(enabled: Boolean) { isEnabled = enabled }
-
     override fun startCollecting(): Flow<TelemetryEvent> {
         return NotificationEventBus.events.filter { it.type == "notification" }
     }
