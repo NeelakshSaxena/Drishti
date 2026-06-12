@@ -1,4 +1,11 @@
-# Ingested Summary: Device Domain
+---\ntitle: device-domain
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Ingested Summary: Device Domain
 
 ## Overview
 A new bounded context, **Device Domain**, has been added to Drishti. This isolates device abstraction and state management from the existing Child/Parent cognition and linking logic.
@@ -17,4 +24,4 @@ A new bounded context, **Device Domain**, has been added to Drishti. This isolat
 ## Isolation Characteristics
 - Does not contain Android-specific code.
 - Uses `DeviceStateCache` and `CommandQueue` which can easily be backed by Redis in the future.
-- Connects transparently with standard HTTP/WS endpoints when needed in Phase D3.
+- Connects transparently with standard HTTP/WS endpoints when needed in Phase D3.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

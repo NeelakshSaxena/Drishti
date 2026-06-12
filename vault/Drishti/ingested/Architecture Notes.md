@@ -1,4 +1,15 @@
----\ntitle: Architecture Notes\nphase: Phase_FullSystemValidation\ngenerated: 2026-06-12T08:38:18Z\nrelated:\n  - [[Implementation Summary]]\n  - [[Changed Files List]]\n  - [[Phase Report]]\n  - [[Architecture Report]]\n---\n\n# Architecture Notes
+---\ntitle: Architecture Notes
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related:
+- '[[Architecture Report]]'
+- '[[Changed Files List]]'
+- '[[Implementation Summary]]'
+- '[[Phase Report]]'
+---\n\n\n\n# Architecture Notes
 
 - **End-to-End Flow**: Android device boot triggers `BootReceiver`, kicking off `NodeForegroundService`. The service loads keys from `EncryptedSharedPreferences`, authenticates via WSS to `/api/device/sync`, and spins up `TelemetryManager` and `AudioCollector`. Backend stores this in `TemporalStore` making it queryable by agents.
 - **Offline Recovery**: Disconnects trigger `OfflineQueue` logic. Android drops into an exponential backoff loop while WorkManager's `HeartbeatWorker` periodically tries to force reconnection on network-state broadcast intent.
@@ -8,4 +19,4 @@ Related:
 - [[Implementation Summary]]
 - [[Changed Files List]]
 - [[Phase Report]]
-- [[Architecture Report]]
+- [[Architecture Report]]\n\n---\n\n## Related Documents\n- [[Architecture Report]]\n- [[Changed Files List]]\n- [[Implementation Summary]]\n- [[Phase Report]]\n\n## Referenced By\n- [[Architecture Report]]\n- [[Changed Files List]]\n- [[Implementation Summary]]\n- [[Phase Index]]\n- [[Phase Report]]\n

@@ -181,6 +181,11 @@
   },
   "active": "2584b40ad2a2cc37",
   "lastOpenFiles": [
+    "reports/Vault Link Report.md",
+    "reports/Orphan File Report.md",
+    "reports/Link Validation Report.md",
+    "reports",
+    "MOCs",
     "ingested/Unresolved Risks.md",
     "ingested/Failure Analysis.md",
     "ingested/Battery Report.md",
@@ -203,8 +208,6 @@
     "ingested/Architecture Notes.md",
     "ingested/Changed Files List.md",
     "ingested/Implementation Summary.md",
-    "raw/accessibility/a11y_cpu_monitor.log",
-    "raw/accessibility",
     "rollback/PHASE_NOTIFICATION_ROLLBACK.md",
     "verification/PHASE_NOTIFICATION_VERIFICATION.md",
     "phase-reports/PHASE_NOTIFICATION.md",
@@ -213,9 +216,6 @@
     "verification/PHASE_TELEMETRY_VERIFICATION.md",
     "phase-reports/PHASE_TELEMETRY.md",
     "ingested/android/telemetry_framework.md",
-    "rollback/PHASE_ANDROID_ROLLBACK.md",
-    "verification/PHASE_ANDROID_VERIFICATION.md",
-    "phase-reports/PHASE_ANDROID.md",
-    "ingested/android/bootstrap.md"
+    "rollback/PHASE_ANDROID_ROLLBACK.md"
   ]
 }

@@ -1,4 +1,11 @@
-# Phase Report: Android Node Development
+---\ntitle: PHASE_ANDROID
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase Report: Android Node Development
 
 ## Objectives
 - Kotlin-based Android App.
@@ -22,4 +29,4 @@
 
 ## Next Steps
 - Integrate UI dashboard for live socket monitoring on the device.
-- Add additional modular collectors (GPS, Network Strength, CPU).
+- Add additional modular collectors (GPS, Network Strength, CPU).\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

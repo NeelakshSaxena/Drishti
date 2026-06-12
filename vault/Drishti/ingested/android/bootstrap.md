@@ -1,4 +1,11 @@
-# Android Node Bootstrap Summary
+---\ntitle: bootstrap
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Android Node Bootstrap Summary
 
 ## Implementation Summary
 The Drishti Node Android application has been initialized with Clean Architecture principles. It includes a Foreground Service (`NodeForegroundService`) that maintains a persistent WebSocket connection to the backend telemetry ingestion service. Hilt is used for Dependency Injection, and a WorkManager fallback (`HeartbeatWorker`) ensures resilience when the foreground service is temporarily interrupted.
@@ -26,4 +33,4 @@ The Drishti Node Android application has been initialized with Clean Architectur
 
 ## Unresolved Issues
 - Proper JWT token retrieval mechanism needs integration with an actual auth flow (currently mocked).
-- Telemetry payload structuring needs synchronization with backend schema updates.
+- Telemetry payload structuring needs synchronization with backend schema updates.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

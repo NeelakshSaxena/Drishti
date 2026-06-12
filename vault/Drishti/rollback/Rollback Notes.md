@@ -1,4 +1,12 @@
----\ntitle: Rollback Notes\nphase: Phase_FullSystemValidation\ngenerated: 2026-06-12T08:38:18Z\nrelated:\n  - [[Phase Report]]\n---\n\n# Rollback Notes
+---\ntitle: Rollback Notes
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related:
+- '[[Phase Report]]'
+---\n\n\n\n# Rollback Notes
 
 Rollback Procedure:
 Since this phase was read-only validation and log generation, rolling back requires simply purging the generated validation reports and testing artifacts.
@@ -8,4 +16,4 @@ Remove-Item -Recurse -Force g:\Projects\Drishti\vault\Drishti\raw\validation
 ```
 
 Related:
-- [[Phase Report]]
+- [[Phase Report]]\n\n---\n\n## Related Documents\n- [[Phase Report]]\n\n## Referenced By\n- [[Phase Index]]\n- [[Phase Report]]\n

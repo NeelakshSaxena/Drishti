@@ -1,4 +1,11 @@
-# Phase D5 Report: Command Dispatch System
+---\ntitle: PHASE_D5
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase D5 Report: Command Dispatch System
 
 ## Implementation Summary
 The Command Dispatch system has been fully implemented, completing the two-way communications channel between Drishti's cognition layer and Android edge devices. Commands are signed securely, queued reliably, and managed through an exhaustive lifecycle handling retries, expirations, and ACKs.
@@ -21,4 +28,4 @@ The `OfflineCommandQueue` currently uses a flat JSON file on disk, making it sim
 - **Commands ACK properly**: Validated; acknowledged commands are stripped from the queue.
 - **Retries work**: Validated; `handle_nack_or_timeout` correctly increments counters and drops commands exceeding `max_retries`.
 - **Offline queue survives restart**: Validated; persisting un-ACKed queues securely onto disk so instances can restart without data loss.
-- **Expired commands removed**: Validated; commands passed their expiration bounds are automatically dropped before dispatch.
+- **Expired commands removed**: Validated; commands passed their expiration bounds are automatically dropped before dispatch.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

@@ -1,4 +1,11 @@
-# Telemetry Framework Summary
+---\ntitle: telemetry_framework
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Telemetry Framework Summary
 
 ## Implementation Summary
 The telemetry framework has been implemented in the Drishti Node Android application. It introduces a `TelemetryManager` orchestrating multiple modular collectors. Features include event throttling (batch flush every 5 seconds), delta updates (events are only queued if data state changes), and permissions-aware execution.
@@ -25,4 +32,4 @@ The telemetry framework has been implemented in the Drishti Node Android applica
 
 ## Unresolved Issues
 - Media and Bluetooth collectors are currently using mock output. They require actual Android API hooks (e.g. `AudioManager`, `BluetoothManager`) to fetch real data.
-- Batch payload serialization currently relies on simple string formatting. Must integrate Moshi or Gson.
+- Batch payload serialization currently relies on simple string formatting. Must integrate Moshi or Gson.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

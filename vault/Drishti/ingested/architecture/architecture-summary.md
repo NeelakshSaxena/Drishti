@@ -1,4 +1,11 @@
-# Architecture Summary: Drishti
+---\ntitle: architecture-summary
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Architecture Summary: Drishti
 
 ## 1. Backend Architecture Map
 The current Drishti backend is a synchronous, monolithic REST API built with FastAPI. It handles routing, logic, and database persistence in a single application.
@@ -53,4 +60,4 @@ To support the Android Node architecture described in the Phase D1 plan, the fol
 1. **Device Gateway**: Introduce an asynchronous WebSocket router (e.g., `/ws/device/{device_id}`) alongside the REST API to handle real-time, bi-directional telemetry.
 2. **Device Domain Model**: Extend `schema.py` and PostgreSQL database to track discrete "Device" entities, decoupled from "Child" entities, supporting capabilities, presence state, and heartbeat logs.
 3. **Event Bus / State Cache**: Implement a transient memory store (like Redis) or an internal async pub/sub system to decouple incoming telemetry from heavy database writes.
-4. **Command Dispatcher**: Create an outbound command queue (stored in DB or Redis) that the WebSocket gateway pulls from to send actions to the Android device.
+4. **Command Dispatcher**: Create an outbound command queue (stored in DB or Redis) that the WebSocket gateway pulls from to send actions to the Android device.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n
