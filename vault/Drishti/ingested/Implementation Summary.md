@@ -1,6 +1,6 @@
----\ntitle: Implementation Summary\nphase: Phase_Accessibility\ngenerated: 2026-06-12T08:24:02Z\nrelated:\n  - [[Architecture Notes]]\n  - [[Changed Files List]]\n---\n\n# Implementation Summary
+---\ntitle: Implementation Summary\nphase: Phase_AudioStreaming\ngenerated: 2026-06-12T08:27:38Z\nrelated:\n  - [[Architecture Notes]]\n  - [[Changed Files List]]\n---\n\n# Implementation Summary
 
-The optional accessibility observation module was implemented using Android's `AccessibilityService`. It captures foreground app transitions and UI text via `TYPE_WINDOW_STATE_CHANGED` and `TYPE_WINDOW_CONTENT_CHANGED` events. Throttling is applied to limit extraction overhead.
+The wake-word and audio streaming subsystem has been implemented. `AudioCollector` runs in the foreground service, constantly buffering 16kHz PCM audio. The `WakeWordEngine` passively monitors the buffer. Upon detection, it toggles streaming mode, encoding chunks in base64 and forwarding them to `WebSocketManager`. The `VadEngine` actively monitors voice energy, automatically terminating the stream when silence crosses the threshold, fulfilling the requirement to *NOT continuously stream audio*.
 
 Related:
 - [[Architecture Notes]]

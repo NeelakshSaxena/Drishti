@@ -1,7 +1,7 @@
----\ntitle: Unresolved Issues\nphase: Phase_Accessibility\ngenerated: 2026-06-12T08:24:02Z\nrelated:\n  - [[Verification Report]]\n  - [[Changed Files List]]\n---\n\n# Unresolved Issues
+---\ntitle: Unresolved Issues\nphase: Phase_AudioStreaming\ngenerated: 2026-06-12T08:27:38Z\nrelated:\n  - [[Verification Report]]\n  - [[Changed Files List]]\n---\n\n# Unresolved Issues
 
-- Enabling the accessibility service still requires a manual trip to the Android system settings by the user. An intent (`ACTION_ACCESSIBILITY_SETTINGS`) redirect needs to be added to the front-end UI.
-- The recursive view extraction (`DrishtiAccessibilityService.kt`) drops deep nested node branches once 10 items are collected. Could lose important text depending on view hierarchy load order.
+- The `WakeWordEngine` is currently a naive amplitude tracker. It must be swapped with an actual ONNX/TFLite model or Porcupine instance to recognize specific keywords (e.g. "Hey Drishti") without false positives.
+- `android.permission.RECORD_AUDIO` requires a runtime permission prompt on modern Android versions, which needs to be added to the MainActivity onboarding flow.
 
 Related:
 - [[Verification Report]]

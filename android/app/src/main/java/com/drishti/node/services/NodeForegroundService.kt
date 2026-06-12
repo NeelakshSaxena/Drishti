@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import com.drishti.node.core.Constants
 import com.drishti.node.networking.WebSocketManager
 import com.drishti.node.telemetry.TelemetryManager
+import com.drishti.node.audio.AudioCollector
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import javax.inject.Inject
@@ -18,6 +19,7 @@ class NodeForegroundService : Service() {
 
     @Inject lateinit var webSocketManager: WebSocketManager
     @Inject lateinit var telemetryManager: TelemetryManager
+    @Inject lateinit var audioCollector: AudioCollector
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate() {
@@ -28,7 +30,7 @@ class NodeForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val notification = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle("Drishti Node Running")
-            .setContentText("Collecting and transmitting telemetry")
+            .setContentText("Collecting telemetry and awaiting wake word")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .build()
 
@@ -36,6 +38,7 @@ class NodeForegroundService : Service() {
         
         webSocketManager.connect()
         telemetryManager.start()
+        audioCollector.startListening()
         startHeartbeat()
 
         return START_STICKY
@@ -46,6 +49,7 @@ class NodeForegroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         telemetryManager.stop()
+        audioCollector.stopListening()
         webSocketManager.disconnect()
         scope.cancel()
     }
