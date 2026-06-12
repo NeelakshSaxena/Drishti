@@ -66,7 +66,8 @@ object AppModule {
             LocationCollector(context, permissionHelper),
             BluetoothCollector(context),
             NotificationCollector(),
-            MediaPlaybackCollector()
+            MediaPlaybackCollector(),
+            AccessibilityCollector()
         )
         return TelemetryManager(collectors, webSocketManager)
     }

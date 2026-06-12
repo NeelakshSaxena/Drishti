@@ -15,9 +15,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    
-    <!-- Required for Notification Listener -->
-    <!-- BIND_NOTIFICATION_LISTENER_SERVICE is required for the service tag -->
 
     <application
         android:name=".DrishtiApplication"
@@ -32,7 +29,6 @@
             android:exported="false"
             android:foregroundServiceType="connectedDevice|location" />
 
-        <!-- Notification Listener Service -->
         <service android:name=".services.DrishtiNotificationService"
                  android:label="Drishti Notification Collector"
                  android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
@@ -40,6 +36,20 @@
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
+        </service>
+
+        <!-- Accessibility Service -->
+        <service
+            android:name=".services.DrishtiAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:label="Drishti Observation Service"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
         </service>
 
         <receiver

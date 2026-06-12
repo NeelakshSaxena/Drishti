@@ -181,6 +181,17 @@
   },
   "active": "2584b40ad2a2cc37",
   "lastOpenFiles": [
+    "ingested/Phase Index.md",
+    "rollback/Rollback Notes.md",
+    "verification/Verification Report.md",
+    "phase-reports/Phase Report.md",
+    "ingested/Verification Results.md",
+    "ingested/Unresolved Issues.md",
+    "ingested/Architecture Notes.md",
+    "ingested/Changed Files List.md",
+    "ingested/Implementation Summary.md",
+    "raw/accessibility/a11y_cpu_monitor.log",
+    "raw/accessibility",
     "rollback/PHASE_NOTIFICATION_ROLLBACK.md",
     "verification/PHASE_NOTIFICATION_VERIFICATION.md",
     "phase-reports/PHASE_NOTIFICATION.md",
@@ -205,16 +216,6 @@
     "phase-reports/PHASE_D5.md",
     "ingested/backend/command-dispatch.md",
     "raw/logs/command-dispatch-implementation.md",
-    "rollback/PHASE_D4_ROLLBACK.md",
-    "verification/PHASE_D4_VERIFICATION.md",
-    "phase-reports/PHASE_D4.md",
-    "ingested/backend/context-ingestion.md",
-    "raw/logs/context-ingestion-implementation.md",
-    "rollback/PHASE_D3_ROLLBACK.md",
-    "verification/PHASE_D3_VERIFICATION.md",
-    "phase-reports/PHASE_D3.md",
-    "ingested/backend/device-gateway.md",
-    "ingested/backend",
-    "raw/logs"
+    "ingested/backend"
   ]
 }
