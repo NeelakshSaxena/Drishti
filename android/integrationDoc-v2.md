@@ -83,29 +83,134 @@ vault/Drishti/decisions/PHASE_X_DECISIONS.md
 
 Add THIS to EVERY Claude/Codex prompt:
 
-```text id="w2f3m5"
+````text id="w2f3m5"
 At the end of this phase:
 
 1. Generate:
-   - implementation summary
-   - changed files list
-   - architecture notes
-   - unresolved issues
-   - verification results
+
+   * Implementation Summary
+   * Changed Files List
+   * Architecture Notes
+   * Unresolved Issues
+   * Verification Results
 
 2. Store RAW artifacts in:
-   vault/Drishti/raw/
+
+   * `vault/Drishti/raw/`
 
 3. Store INGESTED summaries in:
-   vault/Drishti/ingested/
+
+   * `vault/Drishti/ingested/`
 
 4. Create:
-   phase report
-   verification report
-   rollback notes
 
-5. Do NOT continue if stop conditions fail.
-```
+   * Phase Report
+   * Verification Report
+   * Rollback Notes
+
+5. Knowledge Graph / Obsidian Linking Requirements
+
+   * Every generated document MUST contain Obsidian-style wikilinks (`[[Document Name]]`).
+   * Cross-link all related artifacts.
+   * Create bidirectional references whenever applicable.
+   * Link:
+
+     * Phase Report ↔ Verification Report
+     * Phase Report ↔ Rollback Notes
+     * Phase Report ↔ Architecture Notes
+     * Architecture Notes ↔ Changed Files List
+     * Verification Report ↔ Verification Results
+     * Unresolved Issues ↔ Verification Report
+     * Implementation Summary ↔ Architecture Notes
+     * Implementation Summary ↔ Changed Files List
+
+   Example:
+
+   ```md
+   # Phase Report
+
+   Related:
+   - [[Implementation Summary]]
+   - [[Architecture Notes]]
+   - [[Verification Report]]
+   - [[Rollback Notes]]
+````
+
+````md
+Example:
+
+# Architecture Notes
+
+Related:
+
+- [[Implementation Summary]]
+- [[Changed Files List]]
+- [[Unresolved Issues]]
+
+6. Metadata Requirements
+
+   Every markdown artifact must begin with frontmatter:
+
+   ```yaml
+   ---
+   title: <document title>
+   phase: <phase identifier>
+   generated: <timestamp>
+   related:
+     - [[Related Document 1]]
+     - [[Related Document 2]]
+   ---
+   ```
+````
+
+````
+
+7. Index Generation
+
+   Create or update:
+
+   `vault/Drishti/ingested/Phase Index.md`
+
+   containing links to all generated artifacts:
+
+   ```md
+   # Phase Index
+
+   ## Reports
+
+   - [[Phase Report]]
+   - [[Verification Report]]
+   - [[Rollback Notes]]
+
+   ## Technical
+
+   - [[Implementation Summary]]
+   - [[Architecture Notes]]
+   - [[Changed Files List]]
+
+   ## Quality
+
+   - [[Verification Results]]
+   - [[Unresolved Issues]]
+   ```
+
+8. Traceability Requirements
+   - Every changed file must be referenced from at least one note.
+   - Every unresolved issue must link to the affected files and reports.
+   - Every verification result must link to the implementation section it validates.
+   - Preserve link integrity; do not create orphan documents.
+
+9. Stop Conditions
+
+   Do NOT continue if:
+   - Any required artifact is missing.
+   - Any required report is missing.
+   - Any wikilink target does not exist.
+   - Verification fails.
+   - Rollback information is incomplete.
+   - Cross-reference validation fails.
+
+````
 
 ---
 
