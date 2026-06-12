@@ -181,6 +181,13 @@
   },
   "active": "2584b40ad2a2cc37",
   "lastOpenFiles": [
+    "ingested/Unresolved Risks.md",
+    "ingested/Failure Analysis.md",
+    "ingested/Battery Report.md",
+    "ingested/Performance Report.md",
+    "ingested/Architecture Report.md",
+    "raw/validation/full_system_test_suite.log",
+    "raw/validation",
     "raw/security/security_trace.log",
     "raw/security",
     "raw/onboarding/onboarding_trace.log",
@@ -201,21 +208,14 @@
     "rollback/PHASE_NOTIFICATION_ROLLBACK.md",
     "verification/PHASE_NOTIFICATION_VERIFICATION.md",
     "phase-reports/PHASE_NOTIFICATION.md",
-    "raw/android/telemetry-logs/notification_spam_test.log",
     "ingested/android/notification_framework.md",
     "rollback/PHASE_TELEMETRY_ROLLBACK.md",
     "verification/PHASE_TELEMETRY_VERIFICATION.md",
     "phase-reports/PHASE_TELEMETRY.md",
-    "raw/android/telemetry-logs/batch_storm_analysis.log",
-    "raw/android/telemetry-logs",
     "ingested/android/telemetry_framework.md",
     "rollback/PHASE_ANDROID_ROLLBACK.md",
     "verification/PHASE_ANDROID_VERIFICATION.md",
     "phase-reports/PHASE_ANDROID.md",
-    "ingested/android/bootstrap.md",
-    "rollback/PHASE_D5_ROLLBACK.md",
-    "verification/PHASE_D5_VERIFICATION.md",
-    "phase-reports/PHASE_D5.md",
-    "ingested/backend/command-dispatch.md"
+    "ingested/android/bootstrap.md"
   ]
 }

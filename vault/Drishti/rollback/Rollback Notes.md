@@ -1,11 +1,11 @@
----\ntitle: Rollback Notes\nphase: Phase_ProductionSecurity\ngenerated: 2026-06-12T08:34:56Z\nrelated:\n  - [[Phase Report]]\n---\n\n# Rollback Notes
+---\ntitle: Rollback Notes\nphase: Phase_FullSystemValidation\ngenerated: 2026-06-12T08:38:18Z\nrelated:\n  - [[Phase Report]]\n---\n\n# Rollback Notes
 
 Rollback Procedure:
-1. Revert `Constants.kt` schemas back to `http://` / `ws://`.
-2. Delete `CryptoUtils.kt`.
-3. Revert `AuthTokenManager.kt` to drop `EncryptedSharedPreferences` and switch back to `Context.MODE_PRIVATE`.
-4. Revert `WebSocketManager.kt` to remove the `signature` packing logic and Certificate Pinner.
-5. Delete `backend/app/gateway/security.py`.
+Since this phase was read-only validation and log generation, rolling back requires simply purging the generated validation reports and testing artifacts.
+
+```bash
+Remove-Item -Recurse -Force g:\Projects\Drishti\vault\Drishti\raw\validation
+```
 
 Related:
 - [[Phase Report]]
