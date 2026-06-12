@@ -181,6 +181,12 @@
   },
   "active": "2584b40ad2a2cc37",
   "lastOpenFiles": [
+    "rollback/PHASE_TELEMETRY_ROLLBACK.md",
+    "verification/PHASE_TELEMETRY_VERIFICATION.md",
+    "phase-reports/PHASE_TELEMETRY.md",
+    "raw/android/telemetry-logs/batch_storm_analysis.log",
+    "raw/android/telemetry-logs",
+    "ingested/android/telemetry_framework.md",
     "rollback/PHASE_ANDROID_ROLLBACK.md",
     "verification/PHASE_ANDROID_VERIFICATION.md",
     "phase-reports/PHASE_ANDROID.md",
@@ -207,10 +213,7 @@
     "rollback/PHASE_D2_ROLLBACK.md",
     "verification/PHASE_D2_VERIFICATION.md",
     "phase-reports/PHASE_D2.md",
-    "ingested/backend/device-domain.md",
     "ingested/backend",
-    "raw/logs/device-domain-implementation.md",
-    "raw/logs",
-    "Welcome.md"
+    "raw/logs"
   ]
 }

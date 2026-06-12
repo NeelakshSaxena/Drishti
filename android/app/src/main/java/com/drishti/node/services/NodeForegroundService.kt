@@ -8,6 +8,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.drishti.node.core.Constants
 import com.drishti.node.networking.WebSocketManager
+import com.drishti.node.telemetry.TelemetryManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import javax.inject.Inject
@@ -16,6 +17,7 @@ import javax.inject.Inject
 class NodeForegroundService : Service() {
 
     @Inject lateinit var webSocketManager: WebSocketManager
+    @Inject lateinit var telemetryManager: TelemetryManager
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate() {
@@ -33,6 +35,7 @@ class NodeForegroundService : Service() {
         startForeground(1, notification)
         
         webSocketManager.connect()
+        telemetryManager.start()
         startHeartbeat()
 
         return START_STICKY
@@ -42,6 +45,7 @@ class NodeForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        telemetryManager.stop()
         webSocketManager.disconnect()
         scope.cancel()
     }
