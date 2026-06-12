@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import process, management, family, admin
 from app.services import storage
+from app.gateway import ws
 
 # Configure logging
 logging.basicConfig(
@@ -53,7 +54,7 @@ app.include_router(process.router, prefix="/process", tags=["process"])
 app.include_router(management.router, tags=["management"])
 app.include_router(family.router, prefix="/family", tags=["family"])
 app.include_router(admin.router, prefix="/root", tags=["admin"])
-
+app.include_router(ws.router, prefix="/ws", tags=["device-gateway"])
 
 @app.on_event("startup")
 def startup_event():

@@ -24,7 +24,7 @@ export interface Parent {
 export interface Trip {
   id: string;
   events: TripEvent[];
-  status: "active" | "ended";
+  status: "active" | "ended"; 
   current_event_index: number;
   started_at: string;
   ended_at: string | null;
