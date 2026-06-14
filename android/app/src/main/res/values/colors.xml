@@ -2,11 +2,8 @@
 <resources>
     <color name="background">#050505</color>
     <color name="card">#101010</color>
-    <color name="border">#1A1A1A</color>
     <color name="accent_cyan">#6FE7FF</color>
     <color name="success">#22C55E</color>
-    <color name="warning">#FACC15</color>
     <color name="error">#EF4444</color>
     <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#8B8B8B</color>
 </resources>

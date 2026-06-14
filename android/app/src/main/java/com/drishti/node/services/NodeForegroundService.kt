@@ -3,7 +3,6 @@ package com.drishti.node.services
 import android.app.*
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.drishti.node.core.Constants
@@ -21,6 +20,7 @@ class NodeForegroundService : Service() {
     @Inject lateinit var telemetryManager: TelemetryManager
     @Inject lateinit var audioCollector: AudioCollector
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var started = false
 
     override fun onCreate() {
         super.onCreate()
@@ -36,10 +36,13 @@ class NodeForegroundService : Service() {
 
         startForeground(1, notification)
         
-        webSocketManager.connect()
-        telemetryManager.start()
-        audioCollector.startListening()
-        startHeartbeat()
+        if (!started) {
+            started = true
+            webSocketManager.connect()
+            telemetryManager.start()
+            audioCollector.startListening()
+            startHeartbeat()
+        }
 
         return START_STICKY
     }
@@ -52,6 +55,7 @@ class NodeForegroundService : Service() {
         audioCollector.stopListening()
         webSocketManager.disconnect()
         scope.cancel()
+        started = false
     }
 
     private fun startHeartbeat() {
@@ -64,14 +68,12 @@ class NodeForegroundService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                Constants.NOTIFICATION_CHANNEL_ID,
-                "Drishti Node Service",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            Constants.NOTIFICATION_CHANNEL_ID,
+            "Drishti Node Service",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
     }
 }

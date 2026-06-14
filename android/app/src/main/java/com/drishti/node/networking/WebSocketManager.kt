@@ -1,106 +1,149 @@
 package com.drishti.node.networking
 
-import com.drishti.node.core.Constants
+import com.drishti.node.diagnostics.DiagnosticsManager
 import com.drishti.node.storage.LogStorage
-import kotlinx.coroutines.*
-import okhttp3.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+
+enum class SocketStatus { DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING, ERROR }
+
+data class ConnectionSnapshot(
+    val status: SocketStatus = SocketStatus.DISCONNECTED,
+    val lastHeartbeatSentAt: Long? = null,
+    val lastHeartbeatAckAt: Long? = null,
+    val lastMessageAt: Long? = null,
+    val reconnectAttempt: Int = 0,
+    val error: String? = null
+)
 
 class WebSocketManager(
     private val authTokenManager: AuthTokenManager,
     private val logStorage: LogStorage
 ) {
-    // Optional Certificate Pinning
-    private val certificatePinner = CertificatePinner.Builder()
-        .add("backend.drishti.local", Constants.CERT_PIN)
-        .build()
-
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
-        .certificatePinner(certificatePinner) // Enforce Pinning
+        .pingInterval(30, TimeUnit.SECONDS)
         .build()
-
-    private var webSocket: WebSocket? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var isConnected = false
-    private var reconnectAttempt = 0
+    private var webSocket: WebSocket? = null
+    private var manuallyDisconnected = false
+    private val _connection = MutableStateFlow(ConnectionSnapshot())
+    val connection: StateFlow<ConnectionSnapshot> = _connection.asStateFlow()
 
     fun connect() {
-        if (isConnected) return
-        
-        // Token Rotation Check
-        if (!authTokenManager.isTokenValid()) {
-            rotateToken() // Synchronously or trigger rotation flow
+        if (_connection.value.status == SocketStatus.CONNECTED ||
+            _connection.value.status == SocketStatus.CONNECTING
+        ) return
+        val token = authTokenManager.getToken()
+        if (token.isNullOrBlank()) {
+            _connection.value = ConnectionSnapshot(
+                status = SocketStatus.ERROR,
+                error = "A device token is required"
+            )
+            return
         }
-        
-        val token = authTokenManager.getToken() ?: return
-        val request = Request.Builder()
-            .url("${Constants.WEBSOCKET_URL}?token=$token") // Uses WSS
-            .build()
-
-        webSocket = client.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                isConnected = true
-                reconnectAttempt = 0
-                logStorage.log("Secure WebSocket connected") // Secrets NOT logged
-            }
-
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                // Ignore empty/spam for logs
-            }
-
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                isConnected = false
-            }
-
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                isConnected = false
-                scheduleReconnect()
-            }
-        })
+        manuallyDisconnected = false
+        val currentAttempt = _connection.value.reconnectAttempt
+        _connection.value = _connection.value.copy(
+            status = if (currentAttempt == 0) SocketStatus.CONNECTING else SocketStatus.RECONNECTING,
+            error = null
+        )
+        val request = Request.Builder().url(webSocketUrl(token)).build()
+        webSocket = client.newWebSocket(request, listener)
     }
 
-    fun send(rawPayload: String) {
-        if (isConnected) {
-            val secret = authTokenManager.getSecret() ?: return
-            
-            // Replay Protection & Signing
-            val timestamp = System.currentTimeMillis()
-            val nonce = CryptoUtils.generateNonce()
-            
-            val json = JSONObject(rawPayload)
-            json.put("timestamp", timestamp)
-            json.put("nonce", nonce)
-            
-            val stringToSign = json.toString()
-            val signature = CryptoUtils.signPayload(stringToSign, secret)
-            
-            val securePayload = JSONObject()
-            securePayload.put("payload", json)
-            securePayload.put("signature", signature)
-
-            webSocket?.send(securePayload.toString())
+    fun send(rawPayload: String): Boolean {
+        if (_connection.value.status != SocketStatus.CONNECTED) return false
+        val sent = webSocket?.send(rawPayload) == true
+        if (sent) {
+            val type = runCatching { JSONObject(rawPayload).optString("type") }.getOrNull()
+            if (type == "heartbeat" || type == "worker_heartbeat") {
+                _connection.value = _connection.value.copy(lastHeartbeatSentAt = System.currentTimeMillis())
+            }
+            DiagnosticsManager.recordTelemetrySent()
         }
+        return sent
     }
+
+    fun sendHeartbeat(): Boolean = send("""{"type":"heartbeat"}""")
 
     fun disconnect() {
-        webSocket?.close(1000, "Service stopping")
-        isConnected = false
+        manuallyDisconnected = true
+        webSocket?.close(1000, "User signed out")
+        webSocket = null
+        _connection.value = ConnectionSnapshot()
     }
 
-    private fun scheduleReconnect() {
+    fun reconnect() {
+        webSocket?.cancel()
+        _connection.value = _connection.value.copy(
+            status = SocketStatus.RECONNECTING,
+            reconnectAttempt = 0,
+            error = null
+        )
+        connect()
+    }
+
+    private val listener = object : WebSocketListener() {
+        override fun onOpen(webSocket: WebSocket, response: Response) {
+            logStorage.log("Secure WebSocket connected")
+            _connection.value = ConnectionSnapshot(status = SocketStatus.CONNECTED)
+        }
+
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            val now = System.currentTimeMillis()
+            val type = runCatching { JSONObject(text).optString("type") }.getOrNull()
+            _connection.value = _connection.value.copy(
+                lastMessageAt = now,
+                lastHeartbeatAckAt = if (type == "ack") now else _connection.value.lastHeartbeatAckAt,
+                error = null
+            )
+        }
+
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            this@WebSocketManager.webSocket = null
+            _connection.value = _connection.value.copy(status = SocketStatus.DISCONNECTED)
+            if (!manuallyDisconnected) scheduleReconnect("Connection closed: $reason")
+        }
+
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            this@WebSocketManager.webSocket = null
+            scheduleReconnect(t.message ?: "WebSocket connection failed")
+        }
+    }
+
+    private fun scheduleReconnect(message: String) {
+        if (manuallyDisconnected) return
+        val attempt = (_connection.value.reconnectAttempt + 1).coerceAtMost(30)
+        _connection.value = _connection.value.copy(
+            status = SocketStatus.RECONNECTING,
+            reconnectAttempt = attempt,
+            error = message
+        )
+        DiagnosticsManager.recordReconnect()
         scope.launch {
-            val delayMs = (1000L * (1 shl reconnectAttempt)).coerceAtMost(60000L)
-            delay(delayMs)
-            reconnectAttempt++
+            delay((1_000L shl (attempt - 1).coerceAtMost(5)).coerceAtMost(30_000L))
             connect()
         }
     }
-    
-    private fun rotateToken() {
-        // MOCK: Calls HTTPS endpoint to swap old token for new token using refresh token
-        authTokenManager.saveToken("new_rotated_token", "new_secret", System.currentTimeMillis() + 86400000L)
-        logStorage.log("Token Rotated successfully")
+
+    private fun webSocketUrl(token: String): String {
+        val base = authTokenManager.getBackendUrl().trimEnd('/')
+            .replaceFirst("https://", "wss://")
+            .replaceFirst("http://", "ws://")
+        return "$base/ws/device?token=$token"
     }
 }

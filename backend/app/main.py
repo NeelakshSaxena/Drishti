@@ -11,7 +11,7 @@ load_dotenv(os.path.join(_backend_dir, ".env"))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import process, management, family, admin
+from app.routes import process, management, family, admin, device
 from app.services import storage
 from app.gateway import ws
 
@@ -54,6 +54,7 @@ app.include_router(process.router, prefix="/process", tags=["process"])
 app.include_router(management.router, tags=["management"])
 app.include_router(family.router, prefix="/family", tags=["family"])
 app.include_router(admin.router, prefix="/root", tags=["admin"])
+app.include_router(device.router, prefix="/device", tags=["device"])
 app.include_router(ws.router, prefix="/ws", tags=["device-gateway"])
 
 @app.on_event("startup")
