@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:animateLayoutChanges="true"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="16dp">
+            
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Drishti Node"
+                    android:textColor="@color/text_primary"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
+                
+                <TextView
+                    android:id="@+id/tvHeaderSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Device Gateway Active"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="All systems operating normally"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:alpha="0.5" />
+            </LinearLayout>
+
+            <!-- Status Dot -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+                
+                <!-- Simple dot representation using shape -->
+                <View
+                    android:id="@+id/vStatusDot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@color/accent_cyan"
+                    android:alpha="0.8" />
+                
+                <TextView
+                    android:id="@+id/tvStatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="ONLINE"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:alpha="0.8"
+                    android:letterSpacing="0.1" />
+            </LinearLayout>
+        </LinearLayout>
+        
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/border"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Metrics Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card"
+            android:padding="24dp"
+            android:layout_marginBottom="24dp">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="System Metrics"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:rowCount="4"
+                android:useDefaultMargins="true">
+                
+                <!-- Uptime -->
+                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:text="UPTIME" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvUptime" android:text="12h 43m" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Connection -->
+                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:text="CONNECTION" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvConnection" android:text="Connected" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Last Ping -->
+                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:text="LAST PING" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvPing" android:text="42 ms" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Gateway -->
+                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:text="GATEWAY" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvGateway" android:text="Reachable" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Battery -->
+                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:text="BATTERY" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvBattery" android:text="92%" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Sync -->
+                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:text="SYNC" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvSync" android:text="Healthy" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
+                </LinearLayout>
+                
+                <!-- Last Sync -->
+                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1">
+                    <TextView android:text="LAST SYNC" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvLastSync" android:text="2m ago" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                </LinearLayout>
+            </GridLayout>
+        </LinearLayout>
+
+        <!-- Service Control -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@color/card"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+            
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Drishti Service"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Core background daemon"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchService"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true" />
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+            
+            <Button
+                android:id="@+id/btnRestart"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Restart"
+                android:textSize="12sp"
+                android:backgroundTint="@color/card"
+                android:textColor="@color/text_primary"
+                android:layout_marginEnd="8dp" />
+                
+            <Button
+                android:id="@+id/btnForceSync"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Force Sync"
+                android:textSize="12sp"
+                android:backgroundTint="@color/card"
+                android:textColor="@color/text_primary"
+                android:layout_marginEnd="8dp" />
+                
+            <Button
+                android:id="@+id/btnLogs"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Logs"
+                android:textSize="12sp"
+                android:backgroundTint="@color/card"
+                android:textColor="@color/text_primary" />
+        </LinearLayout>
+
+        <!-- Logs Preview -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:orientation="vertical"
+            android:background="#070707"
+            android:padding="16dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="SYSTEM STREAM"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.1" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Live"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp" />
+            </LinearLayout>
+            
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/border"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp" />
+                
+            <ScrollView
+                android:id="@+id/svLogs"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:id="@+id/tvLogs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:lineSpacingExtra="4dp" />
+            </ScrollView>
+        </LinearLayout>
+
+        <!-- Footer -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/border"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp" />
+            
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Node ID: DR-AX21"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Version: v1.0.0"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

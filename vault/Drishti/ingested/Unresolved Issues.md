@@ -1,11 +1,15 @@
 ---
 title: Unresolved Issues
-phase: Observability & Diagnostics Phase
-generated: 2026-06-14T14:13:42+05:30
+phase: D4-A5
+generated: 2026-06-14T14:46:00+05:30
 related:
   - [[Verification Report]]
-  - [[Architecture Notes]]
 ---
+
 # Unresolved Issues
 
-- The local diagnostics buffer is capped at 1000 items in memory to prevent `OutOfMemoryError` bounds during multi-day stress testing. A more persistent Room DB backed solution may be necessary for exhaustive long-term tracing.
+1. **Target WebSocket URL:** The `GatewayClient` is currently hardcoded to `ws://localhost:8080/ws`. This must be extracted into `BuildConfig` or a user-configurable settings panel before production release.
+2. **Foreground Service Synchronization:** Manual control of `isServiceRunning` via the UI toggle works, but it does not strictly monitor if the OS killed the service. This requires a robust IPC binder or BroadcastReceiver loop for absolute synchronization.
+
+Related:
+- [[Verification Report]]
