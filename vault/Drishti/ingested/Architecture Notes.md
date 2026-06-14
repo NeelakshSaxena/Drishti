@@ -1,7 +1,7 @@
 ---
 title: Architecture Notes
-phase: Release Packaging Phase
-generated: 2026-06-14T13:47:51+05:30
+phase: Observability & Diagnostics Phase
+generated: 2026-06-14T14:13:42+05:30
 related:
   - [[Implementation Summary]]
   - [[Changed Files List]]
@@ -10,5 +10,5 @@ related:
 ---
 # Architecture Notes
 
-- R8 optimization is enabled for release builds (`isMinifyEnabled = true`), effectively reducing APK payload and obfuscating the source byte-code.
-- App startup metrics strictly rely on App Startup (`androidx.startup`) removing default work manager initialization context duplication.
+- Diagnostics state is held as singletons (`DiagnosticsManager`, `DiagnosticsLogger`) to ensure uniform capture across all Application background workers and foreground UI surfaces.
+- PII redaction happens dynamically at logging call sites before storing in memory or exporting to disk.
