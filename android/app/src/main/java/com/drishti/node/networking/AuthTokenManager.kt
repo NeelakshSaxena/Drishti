@@ -24,14 +24,44 @@ class AuthTokenManager(context: Context) {
     }
 
     fun getToken(): String? = prefs.getString("jwt_token", null)
-    fun getSecret(): String? = prefs.getString("device_secret", "DEFAULT_SECRET") // Used for HMAC
+    fun getSecret(): String? = prefs.getString("device_secret", null)
     fun getExpiry(): Long = prefs.getLong("token_expiry", 0L)
+    fun getDeviceId(): String? = prefs.getString("device_id", null)
+    fun getDeviceName(): String = prefs.getString("device_name", "Android Node") ?: "Android Node"
+    fun getBackendUrl(): String = prefs.getString("backend_url", DEFAULT_BACKEND_URL) ?: DEFAULT_BACKEND_URL
+    fun isAlwaysRememberEnabled(): Boolean = prefs.getBoolean("always_remember", true)
+    fun isDarkModeEnabled(): Boolean = prefs.getBoolean("dark_mode", true)
     
     fun saveToken(token: String, secret: String, expiryTimeMs: Long) {
         prefs.edit()
             .putString("jwt_token", token)
             .putString("device_secret", secret)
             .putLong("token_expiry", expiryTimeMs)
+            .apply()
+    }
+
+    fun saveSession(
+        token: String,
+        deviceId: String?,
+        deviceName: String,
+        backendUrl: String,
+        alwaysRemember: Boolean
+    ) {
+        prefs.edit()
+            .putString("jwt_token", token)
+            .putLong("token_expiry", Long.MAX_VALUE)
+            .putString("device_id", deviceId)
+            .putString("device_name", deviceName)
+            .putString("backend_url", backendUrl.trimEnd('/'))
+            .putBoolean("always_remember", alwaysRemember)
+            .apply()
+    }
+
+    fun updateSettings(backendUrl: String, alwaysRemember: Boolean, darkMode: Boolean) {
+        prefs.edit()
+            .putString("backend_url", backendUrl.trimEnd('/'))
+            .putBoolean("always_remember", alwaysRemember)
+            .putBoolean("dark_mode", darkMode)
             .apply()
     }
     
@@ -43,5 +73,9 @@ class AuthTokenManager(context: Context) {
         val token = getToken()
         val isExpired = System.currentTimeMillis() > getExpiry()
         return token != null && !isExpired
+    }
+
+    companion object {
+        const val DEFAULT_BACKEND_URL = "https://drishti-walb.onrender.com"
     }
 }

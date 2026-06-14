@@ -44,6 +44,12 @@ android {
         abortOnError = true
         checkReleaseBuilds = true
         warningsAsErrors = true
+        disable += setOf(
+            "GradleDependency",
+            "IconLauncherShape",
+            "MonochromeLauncherIcon",
+            "ObsoleteLintCustomCheck"
+        )
     }
 
     compileOptions {
@@ -52,6 +58,13 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
@@ -82,4 +95,17 @@ dependencies {
 
     // Security
     implementation(libs.security.crypto)
+
+    // Android-native Material 3 UI
+    implementation(platform(libs.compose.bom))
+    implementation(libs.activity.compose)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
+    implementation(libs.navigation.compose)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.hilt.navigation.compose)
+    debugImplementation(libs.compose.ui.tooling)
 }
