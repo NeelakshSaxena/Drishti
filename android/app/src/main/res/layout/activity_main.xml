@@ -116,45 +116,45 @@
                 android:useDefaultMargins="true">
                 
                 <!-- Uptime -->
-                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
-                    <TextView android:text="UPTIME" android:textSize="10sp" android:textColor="@color/text_secondary" />
-                    <TextView android:id="@+id/tvUptime" android:text="12h 43m" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="UPTIME" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvUptime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="12h 43m" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
                 </LinearLayout>
 
                 <!-- Connection -->
-                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
-                    <TextView android:text="CONNECTION" android:textSize="10sp" android:textColor="@color/text_secondary" />
-                    <TextView android:id="@+id/tvConnection" android:text="Connected" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CONNECTION" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvConnection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Connected" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
                 </LinearLayout>
 
                 <!-- Last Ping -->
-                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
-                    <TextView android:text="LAST PING" android:textSize="10sp" android:textColor="@color/text_secondary" />
-                    <TextView android:id="@+id/tvPing" android:text="42 ms" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LAST PING" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvPing" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="42 ms" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
                 </LinearLayout>
 
                 <!-- Gateway -->
-                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
-                    <TextView android:text="GATEWAY" android:textSize="10sp" android:textColor="@color/text_secondary" />
-                    <TextView android:id="@+id/tvGateway" android:text="Reachable" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GATEWAY" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvGateway" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Reachable" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
                 </LinearLayout>
 
                 <!-- Battery -->
-                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
-                    <TextView android:text="BATTERY" android:textSize="10sp" android:textColor="@color/text_secondary" />
-                    <TextView android:id="@+id/tvBattery" android:text="92%" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="BATTERY" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvBattery" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="92%" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
                 </LinearLayout>
 
                 <!-- Sync -->
-                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
-                    <TextView android:text="SYNC" android:textSize="10sp" android:textColor="@color/text_secondary" />
-                    <TextView android:id="@+id/tvSync" android:text="Healthy" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginBottom="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SYNC" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvSync" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Healthy" android:textSize="12sp" android:textColor="@color/accent_cyan" android:textStyle="bold" android:layout_marginTop="4dp" />
                 </LinearLayout>
                 
                 <!-- Last Sync -->
-                <LinearLayout android:orientation="vertical" android:layout_columnWeight="1">
-                    <TextView android:text="LAST SYNC" android:textSize="10sp" android:textColor="@color/text_secondary" />
-                    <TextView android:id="@+id/tvLastSync" android:text="2m ago" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LAST SYNC" android:textSize="10sp" android:textColor="@color/text_secondary" />
+                    <TextView android:id="@+id/tvLastSync" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2m ago" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="4dp" />
                 </LinearLayout>
             </GridLayout>
         </LinearLayout>
