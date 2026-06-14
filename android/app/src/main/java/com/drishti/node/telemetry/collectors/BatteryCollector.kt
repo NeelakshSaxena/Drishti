@@ -15,10 +15,6 @@ class BatteryCollector(private val context: Context) : TelemetryCollector {
     override val name = "battery"
     override var isEnabled = true
 
-    override fun setEnabled(enabled: Boolean) {
-        isEnabled = enabled
-    }
-
     override fun startCollecting(): Flow<TelemetryEvent> = callbackFlow {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {

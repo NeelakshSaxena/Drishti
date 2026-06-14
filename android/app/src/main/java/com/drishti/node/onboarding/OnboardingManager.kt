@@ -24,9 +24,10 @@ class OnboardingManager @Inject constructor(
             val endpoint = qrJson.getString("endpoint")
 
             // 1. Credential Exchange
-            val token = exchangeCredentials(endpoint, pairingCode, deviceName)
-            if (token != null) {
-                authTokenManager.saveToken(token)
+            val credentials = exchangeCredentials(endpoint, pairingCode, deviceName)
+            if (credentials != null) {
+                val (token, secret, expiry) = credentials
+                authTokenManager.saveToken(token, secret, expiry)
                 
                 // 2. Capability Sync & Permission Health
                 syncCapabilities(endpoint, token)
@@ -39,7 +40,7 @@ class OnboardingManager @Inject constructor(
         }
     }
 
-    private fun exchangeCredentials(endpoint: String, pairingCode: String, deviceName: String): String? {
+    private fun exchangeCredentials(endpoint: String, pairingCode: String, deviceName: String): Triple<String, String, Long>? {
         val url = URL("$endpoint/api/device/register")
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
@@ -52,7 +53,10 @@ class OnboardingManager @Inject constructor(
         if (connection.responseCode == 200) {
             val response = connection.inputStream.bufferedReader().readText()
             val json = JSONObject(response)
-            return json.getString("token")
+            val token = json.getString("token")
+            val secret = json.optString("secret", "mock_secret")
+            val expiry = json.optLong("expiry", System.currentTimeMillis() + 86400000L)
+            return Triple(token, secret, expiry)
         }
         return null
     }

@@ -1,4 +1,11 @@
-# Phase Rollback Notes: Telemetry Framework
+---\ntitle: PHASE_TELEMETRY_ROLLBACK
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase Rollback Notes: Telemetry Framework
 
 ## Rollback Trigger Conditions
 - Memory leaks caused by unclosed `callbackFlow` receivers.
@@ -18,4 +25,4 @@
 3. Remove the new permissions from `AndroidManifest.xml`.
 4. Delete vault artifacts related to this phase:
    - `vault/Drishti/ingested/android/telemetry_framework.md`
-   - `vault/Drishti/phase-reports/PHASE_TELEMETRY.md`
+   - `vault/Drishti/phase-reports/PHASE_TELEMETRY.md`\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

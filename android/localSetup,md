@@ -1,0 +1,258 @@
+# Absolute Java and Gradle Isolation Within a Single Project Root
+
+## Core Concept
+
+- **Zero Global Footprint:** No tools are installed into system directories (`/usr/bin`, `C:\Program Files`).
+- **Environment Independence:** The project brings its own runtime and build tool.
+- **Disposable Architecture:** Deleting the project root folder removes 100% of the tools from your machine. [1, 2]
+
+---
+
+## Part 1: Java (JDK) Isolation
+
+Instead of using a system installer that alters global paths, Java is treated as a portable folder inside the project.
+
+### 1. Directory Structure
+
+You manually download a compressed archive (`.tar.gz` or `.zip`) of the Java Development Kit (JDK) and extract it directly into a hidden utilities folder inside your project. [3]
+
+```text
+my-project/
+└── .tools/
+    └── jdk-21/           <-- Extracted portable JDK
+        ├── bin/
+        │   ├── java      <-- The actual Java runtime executable
+        │   └── javac     <-- The Java compiler executable
+        └── lib/
+```
+
+### 2. Execution Mechanism
+
+Because this Java instance is not in your system `PATH`, your operating system does not know it exists. To use it, you must explicitly point your build tool to it using the `JAVA_HOME` environment variable on a per-command basis. [4, 5, 6, 7, 8]
+
+**Linux/macOS**
+
+```bash
+JAVA_HOME=/path/to/project/.tools/jdk-21
+```
+
+**Windows (Command Prompt)**
+
+```cmd
+set JAVA_HOME=C:\path\to\project\.tools\jdk-21
+```
+
+---
+
+## Part 2: Gradle Isolation
+
+Gradle achieves project-level isolation natively using a built-in feature called the **Gradle Wrapper**. [9, 10, 11]
+
+### 1. The Wrapper Architecture
+
+Instead of downloading the heavy Gradle build engine, you commit four small, lightweight wrapper files directly into your project's version control (Git). [12, 13]
+
+```text
+my-project/
+├── gradlew                  <-- Executable shell script for Linux/macOS
+├── gradlew.bat              <-- Executable batch script for Windows
+└── gradle/
+    └── wrapper/
+        ├── gradle-wrapper.jar
+        │   <-- Tiny bootstrap code logic
+        └── gradle-wrapper.properties
+            <-- Configuration text file
+```
+
+### 2. How It Automates Isolation
+
+When you run the wrapper script (`./gradlew`), it triggers the following lifecycle: [14]
+
+1. **Reads Configuration**
+   Checks `gradle-wrapper.properties` to determine the exact Gradle version required (for example, `gradle-8.8-bin.zip`).
+
+2. **Checks Local Cache**
+   Looks inside a user-isolated cache folder (`~/.gradle/wrapper/dists/`) to see whether that version has already been downloaded.
+
+3. **Downloads on Demand**
+   If the required version is missing, Gradle automatically downloads it from the internet.
+
+4. **Executes the Build**
+   Launches the project build using that specific cached version, completely ignoring any global Gradle installations. [15, 16, 17, 18, 19]
+
+---
+
+## Combined Execution
+
+To build your project using 100% isolated tools, combine both mechanisms into a single command:
+
+```bash
+# Set Java home to the project-local JDK,
+# then launch the project-local Gradle wrapper
+
+JAVA_HOME=$(pwd)/.tools/jdk-21 ./gradlew build
+```
+
+### What Happens
+
+1. `JAVA_HOME` tells the Gradle Wrapper exactly which isolated Java runtime and compiler to use.
+2. `./gradlew` ensures the exact Gradle version specified by the project is used to execute the build. [20, 21]
+
+---
+
+# Windows: Fully Isolated Java + Gradle Setup
+
+## Project Layout
+
+```text
+my-project/
+│
+├── .tools/
+│   └── jdk-21/
+│       ├── bin/
+│       ├── lib/
+│       └── ...
+│
+├── gradlew
+├── gradlew.bat
+├── gradle/
+│   └── wrapper/
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
+│
+├── build.gradle
+└── settings.gradle
+```
+
+---
+
+## Step 1: Download a Portable JDK
+
+Download a ZIP distribution (not an installer) of your preferred JDK.
+
+Good choices:
+
+- Eclipse Adoptium (Temurin)
+- Amazon (Corretto)
+- Oracle Corporation (Oracle JDK)
+
+Extract it into:
+
+```text
+my-project\.tools\jdk-21\
+```
+
+Verify that this exists:
+
+```text
+my-project\.tools\jdk-21\bin\java.exe
+my-project\.tools\jdk-21\bin\javac.exe
+```
+
+---
+
+## Step 2: Generate the Gradle Wrapper
+
+If the project does not already contain a wrapper, generate one once:
+
+```cmd
+gradle wrapper
+```
+
+Commit these files:
+
+```text
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.properties
+```
+
+After that, nobody needs a global Gradle installation.
+
+---
+
+## Step 3: Build Using the Local JDK
+
+### Command Prompt (cmd.exe)
+
+```cmd
+set JAVA_HOME=%CD%\.tools\jdk-21
+set PATH=%JAVA_HOME%\bin;%PATH%
+
+gradlew.bat build
+```
+
+### PowerShell
+
+```powershell
+$env:JAVA_HOME="$PWD\.tools\jdk-21"
+$env:PATH="$env:JAVA_HOME\bin;$env:PATH"
+
+.\gradlew.bat build
+```
+
+---
+
+## Step 4: One-Click Build Script
+
+Create `build-local.cmd`:
+
+```cmd
+@echo off
+
+set JAVA_HOME=%~dp0.tools\jdk-21
+set PATH=%JAVA_HOME%\bin;%PATH%
+
+call "%~dp0gradlew.bat" build
+```
+
+Run:
+
+```cmd
+build-local.cmd
+```
+
+---
+
+## Optional: Verify Isolation
+
+Check which Java is being used:
+
+```cmd
+gradlew.bat -version
+```
+
+The output should show:
+
+```text
+JVM: 21 (...)
+Java Home: C:\...\my-project\.tools\jdk-21
+```
+
+If the Java Home points inside your project folder, the build is completely isolated from any system-installed JDK.
+
+---
+
+## Cleanup
+
+To remove everything:
+
+```text
+Delete:
+- my-project/
+```
+
+This removes:
+
+- The JDK
+- The Gradle wrapper files
+- The build outputs
+
+The only remaining Gradle files may be in:
+
+```text
+%USERPROFILE%\.gradle
+```
+
+If you want _absolute_ isolation with no use of the global Gradle cache at all, Gradle can also be configured to use a project-local `.gradle-cache` directory.

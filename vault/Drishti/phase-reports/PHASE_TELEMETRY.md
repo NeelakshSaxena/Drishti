@@ -1,4 +1,11 @@
-# Phase Report: Telemetry Framework
+---\ntitle: PHASE_TELEMETRY
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase Report: Telemetry Framework
 
 ## Objectives
 - Implement modular telemetry framework.
@@ -20,4 +27,4 @@
 
 ## Next Steps
 - Real APIs for Location (FusedLocationProvider), Bluetooth, and Media Session.
-- Implement robust JSON serialization (Moshi).
+- Implement robust JSON serialization (Moshi).\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

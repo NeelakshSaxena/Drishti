@@ -1,4 +1,13 @@
----\ntitle: Performance Report\nphase: Phase_FullSystemValidation\ngenerated: 2026-06-12T08:38:18Z\nrelated:\n  - [[Verification Results]]\n  - [[Battery Report]]\n---\n\n# Performance Report
+---\ntitle: Performance Report
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related:
+- '[[Battery Report]]'
+- '[[Verification Results]]'
+---\n\n\n\n# Performance Report
 
 - WSS Latency: 45ms average round-trip on mocked networks.
 - Throughput: Node buffers and flushes 5-second delta telemetry arrays in < 50kb bursts.
@@ -6,4 +15,4 @@
 
 Related:
 - [[Verification Results]]
-- [[Battery Report]]
+- [[Battery Report]]\n\n---\n\n## Related Documents\n- [[Battery Report]]\n- [[Verification Results]]\n\n## Referenced By\n- [[Battery Report]]\n- [[Phase Index]]\n- [[Verification Results]]\n

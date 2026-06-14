@@ -1,0 +1,52 @@
+name: Android Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+        working-directory: ./android
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        working-directory: ./android
+
+      - name: Generate Checksums
+        run: |
+          sha256sum app/build/outputs/apk/release/app-release-unsigned.apk > checksum-release.txt
+        working-directory: ./android
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Upload Mapping File
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping
+          path: android/app/build/outputs/mapping/release/mapping.txt
+
+      - name: Upload Checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksum-release
+          path: android/checksum-release.txt

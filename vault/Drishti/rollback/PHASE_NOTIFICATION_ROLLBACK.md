@@ -1,4 +1,11 @@
-# Phase Rollback Notes: Notification Framework
+---\ntitle: PHASE_NOTIFICATION_ROLLBACK
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase Rollback Notes: Notification Framework
 
 ## Rollback Trigger Conditions
 - System UI crashes or severe latency when processing multiple high-frequency notifications.
@@ -17,4 +24,4 @@
    - `android/app/src/main/java/com/drishti/node/telemetry/collectors/NotificationCollector.kt`
 4. Delete vault artifacts related to this phase:
    - `vault/Drishti/ingested/android/notification_framework.md`
-   - `vault/Drishti/phase-reports/PHASE_NOTIFICATION.md`
+   - `vault/Drishti/phase-reports/PHASE_NOTIFICATION.md`\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

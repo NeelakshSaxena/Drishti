@@ -1,4 +1,11 @@
-# Notification & Media Session Integration Summary
+---\ntitle: notification_framework
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Notification & Media Session Integration Summary
 
 ## Implementation Summary
 Integrated an Android `NotificationListenerService` via [DrishtiNotificationService.kt](file:///g:/Projects/Drishti/android/app/src/main/java/com/drishti/node/services/DrishtiNotificationService.kt) which securely captures notification posts and reads active `MediaController` sessions. The integration utilizes a singleton [NotificationEventBus.kt](file:///g:/Projects/Drishti/android/app/src/main/java/com/drishti/node/telemetry/NotificationEventBus.kt) to dispatch extracted metadata asynchronously without blocking the OS notification pipeline. A configurable blocklist is managed by [PrivacyManager.kt](file:///g:/Projects/Drishti/android/app/src/main/java/com/drishti/node/permissions/PrivacyManager.kt) to ensure no sensitive notifications (e.g., banking or messaging) or system spam are tracked.
@@ -18,4 +25,4 @@ Integrated an Android `NotificationListenerService` via [DrishtiNotificationServ
 
 ## Unresolved Issues
 - `NotificationListenerService` requires manual user approval in the Android Settings -> Special Access menu. This is currently unaccounted for in the onboarding flow.
-- Notification content (text/title) is intentionally dropped right now for max privacy; only `category` and `packageName` are kept.
+- Notification content (text/title) is intentionally dropped right now for max privacy; only `category` and `packageName` are kept.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

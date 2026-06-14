@@ -1,4 +1,11 @@
-# Phase Rollback Notes: Android Node
+---\ntitle: PHASE_ANDROID_ROLLBACK
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase Rollback Notes: Android Node
 
 ## Rollback Trigger Conditions
 - Severe battery drain (>5% per hour in background) detected in field testing.
@@ -14,4 +21,4 @@
 3. Delete vault artifacts related to this phase:
    - `vault/Drishti/ingested/android/bootstrap.md`
    - `vault/Drishti/phase-reports/PHASE_ANDROID.md`
-4. Revert any backend changes made to support this Android client (if applicable).
+4. Revert any backend changes made to support this Android client (if applicable).\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

@@ -1,4 +1,11 @@
-# Ingested Summary: Device Gateway
+---\ntitle: device-gateway
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Ingested Summary: Device Gateway
 
 ## Overview
 A new **Device Gateway** service has been added to Drishti. This serves as the asynchronous, realtime WebSocket boundary connecting physical devices to the internal backend abstractions.
@@ -14,4 +21,4 @@ A new **Device Gateway** service has been added to Drishti. This serves as the a
 - Drops connections providing invalid tokens.
 - Captures and suppresses JSON decode errors gracefully.
 - Re-entrant (safe to connect multiple times, drops old disconnected session).
-- Automatically updates global state to "offline" if a socket disconnects.
+- Automatically updates global state to "offline" if a socket disconnects.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

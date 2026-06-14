@@ -1,0 +1,1 @@
+---\ntitle: Architecture Index\ntype: index\n---\n\n# Architecture Index\n\n- [[architecture-summary]]\n

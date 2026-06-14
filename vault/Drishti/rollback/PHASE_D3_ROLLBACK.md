@@ -1,4 +1,11 @@
-# Phase D3 Rollback Notes
+---\ntitle: PHASE_D3_ROLLBACK
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase D3 Rollback Notes
 
 ## Rollback Procedure
 If the Device Gateway needs to be removed from the system, it requires reverting changes to `main.py` in addition to deleting the newly created module.
@@ -14,4 +21,4 @@ If the Device Gateway needs to be removed from the system, it requires reverting
 ```bash
 rm -rf backend/app/gateway/
 rm backend/test_ws_gateway.py
-```
+```\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

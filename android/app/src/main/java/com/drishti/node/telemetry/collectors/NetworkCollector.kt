@@ -14,8 +14,6 @@ class NetworkCollector(private val context: Context) : TelemetryCollector {
     override val name = "network"
     override var isEnabled = true
 
-    override fun setEnabled(enabled: Boolean) { isEnabled = enabled }
-
     override fun startCollecting(): Flow<TelemetryEvent> = callbackFlow {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         

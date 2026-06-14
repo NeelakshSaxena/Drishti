@@ -1,4 +1,11 @@
-# Phase Report: Notification & Media Framework
+---\ntitle: PHASE_NOTIFICATION
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Phase Report: Notification & Media Framework
 
 ## Objectives
 - Integrate `NotificationListenerService` to capture app notifications.
@@ -19,4 +26,4 @@
 
 ## Next Steps
 - Expose the blocklist configurable options to the UI so users can dynamically block specific apps.
-- Implement UI prompt prompting the user to grant the `BIND_NOTIFICATION_LISTENER_SERVICE` permission.
+- Implement UI prompt prompting the user to grant the `BIND_NOTIFICATION_LISTENER_SERVICE` permission.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

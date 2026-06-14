@@ -11,8 +11,6 @@ class AccessibilityCollector : TelemetryCollector {
     // Disabled by default per requirements
     override var isEnabled = false
 
-    override fun setEnabled(enabled: Boolean) { isEnabled = enabled }
-
     override fun startCollecting(): Flow<TelemetryEvent> {
         return NotificationEventBus.events.filter { 
             (it.type == "foreground_app" || it.type == "ui_text_extracted") && isEnabled 

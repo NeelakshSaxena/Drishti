@@ -1,0 +1,1 @@
+# Link Validation Report\n\n- [[Welcome]] -> [[create a link]]\n

@@ -1,4 +1,11 @@
-# Raw Repo Analysis: Drishti
+---\ntitle: scan-outputs
+type: document
+created: '2026-06-12T08:41:38Z'
+vault: Drishti
+tags:
+- drishti
+related: []
+---\n\n# Raw Repo Analysis: Drishti
 
 ## Repository Structure Overview
 
@@ -31,4 +38,4 @@
 
 ### Missing Subsystems
 - **WebSockets**: No WebSocket implementations found in the current backend.
-- **Event Bus / PubSub**: No message brokers (Redis, Kafka, RabbitMQ) are configured or used. State updates are synchronous.
+- **Event Bus / PubSub**: No message brokers (Redis, Kafka, RabbitMQ) are configured or used. State updates are synchronous.\n\n---\n\n## Related Documents\nNone\n\n## Referenced By\nNone\n

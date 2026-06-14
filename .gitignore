@@ -36,3 +36,10 @@ backend/data/*.db
 backend/data/storage.json
 *.sqlite3
 *.db
+
+# Toolchain and Android Build Cache
+toolchain/
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/

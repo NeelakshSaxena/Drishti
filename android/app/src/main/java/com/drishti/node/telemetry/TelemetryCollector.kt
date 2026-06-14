@@ -5,8 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface TelemetryCollector {
     val name: String
-    val isEnabled: Boolean
-    fun setEnabled(enabled: Boolean)
+    var isEnabled: Boolean
     fun startCollecting(): Flow<TelemetryEvent>
     fun stopCollecting()
 }
