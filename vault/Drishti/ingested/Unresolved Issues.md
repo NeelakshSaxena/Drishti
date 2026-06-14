@@ -1,11 +1,11 @@
 ---
 title: Unresolved Issues
-phase: Build Stabilization Phase
-generated: 2026-06-14T13:31:54+05:30
+phase: Release Packaging Phase
+generated: 2026-06-14T13:47:51+05:30
 related:
   - [[Verification Report]]
   - [[Architecture Notes]]
 ---
 # Unresolved Issues
 
-- None. The build successfully produces deterministic APKs and the workflow templates are finalized.
+- Release keystore parameters (`storePassword`, `keyPassword`) are hardcoded in `build.gradle.kts` temporarily. For full CI/CD deployment, they must be migrated to `System.getenv("KEYSTORE_PASSWORD")` and injected via GitHub Actions secrets.
