@@ -1,15 +1,18 @@
 ---
 title: Changed Files List
-phase: Observability & Diagnostics Phase
-generated: 2026-06-14T14:13:42+05:30
+phase: D4-A5
+generated: 2026-06-14T14:46:00+05:30
 related:
-  - [[Implementation Summary]]
   - [[Architecture Notes]]
+  - [[Implementation Summary]]
 ---
+
 # Changed Files List
 
-- `android/app/src/main/java/com/drishti/node/diagnostics/DiagnosticsLogger.kt` (Added)
-- `android/app/src/main/java/com/drishti/node/diagnostics/DiagnosticsManager.kt` (Added)
-- `android/app/src/main/java/com/drishti/node/MainActivity.kt` (Modified)
-- `android/app/src/main/java/com/drishti/node/DrishtiApplication.kt` (Modified)
-- `test_diagnostics.ps1` (Added)
+- `android/app/src/main/java/com/drishti/node/networking/GatewayClient.kt`: (Added) Implements WebSocket connectivity, heartbeat logic, and `StateFlow` state exposure.
+- `android/app/src/main/java/com/drishti/node/MainActivity.kt`: (Modified) Integrated `GatewayClient` for real-time connection status, replacing simulated logic.
+- `android/app/src/main/res/layout/activity_main.xml`: (Modified) Added `android:animateLayoutChanges="true"` to provide smooth UX transitions for Phase 5 UI Polish.
+
+Related:
+- [[Architecture Notes]]
+- [[Implementation Summary]]
