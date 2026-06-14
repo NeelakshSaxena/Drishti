@@ -17,6 +17,10 @@ class DrishtiApplication : Application(), Configuration.Provider {
             
     override fun onCreate() {
         super.onCreate()
-        // Initialization
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            com.drishti.node.diagnostics.DiagnosticsLogger.logCrash(throwable)
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
     }
 }
