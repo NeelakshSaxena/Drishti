@@ -48,7 +48,8 @@ android {
             "GradleDependency",
             "IconLauncherShape",
             "MonochromeLauncherIcon",
-            "ObsoleteLintCustomCheck"
+            "ObsoleteLintCustomCheck",
+            "OldTargetApi"
         )
     }
 
