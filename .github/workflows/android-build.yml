@@ -10,6 +10,7 @@ jobs:
   validate:
     name: Validate and Lint
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -22,16 +23,17 @@ jobs:
           cache: 'gradle'
 
       - name: Make gradlew executable
-        run: chmod +x android/gradlew
         working-directory: ./android
+        run: chmod +x gradlew
 
       - name: Run Lint
-        run: ./gradlew lintDebug
         working-directory: ./android
+        run: ./gradlew lintDebug
 
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -44,17 +46,18 @@ jobs:
           cache: 'gradle'
 
       - name: Make gradlew executable
-        run: chmod +x android/gradlew
         working-directory: ./android
+        run: chmod +x gradlew
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
         working-directory: ./android
+        run: ./gradlew testDebugUnitTest
 
   build-debug:
     name: Build Debug APK
     needs: [validate, test]
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -67,17 +70,17 @@ jobs:
           cache: 'gradle'
 
       - name: Make gradlew executable
-        run: chmod +x android/gradlew
         working-directory: ./android
+        run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
         working-directory: ./android
+        run: ./gradlew assembleDebug
 
       - name: Generate Checksums
+        working-directory: ./android
         run: |
           sha256sum app/build/outputs/apk/debug/app-debug.apk > checksum-debug.txt
-        working-directory: ./android
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
