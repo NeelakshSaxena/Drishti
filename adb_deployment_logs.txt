@@ -1,6 +1,0 @@
-Backend Auth: OK
-Child Linking: OK (Code: 09XUNK)
-Device Registration: OK (Token: dev-token-269f5af7)
-APK Install: OK
-Performing Streamed Install
-Success

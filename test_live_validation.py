@@ -12,8 +12,8 @@ ADB_PATH = r"g:\Projects\Drishti\toolchain\android-sdk\platform-tools\adb.exe"
 APK_PATH = r"g:\Projects\Drishti\android\app\build\outputs\apk\debug\app-debug.apk"
 PACKAGE_NAME = "com.drishti.node.debug"
 
-API_BASE = "https://39c2lcsk-8000.inc1.devtunnels.ms"
-FRONTEND_BASE = "https://39c2lcsk-3002.inc1.devtunnels.ms"
+API_BASE = "http://localhost:8000"
+FRONTEND_BASE = "http://localhost:3000"
 
 PARENT_EMAIL = "neelaksh7.saxena@gmail.com"
 PARENT_PASS = "N33L4K8H@drishti"
