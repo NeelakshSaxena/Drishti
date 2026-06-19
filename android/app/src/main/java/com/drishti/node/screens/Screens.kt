@@ -126,8 +126,8 @@ fun SplashScreen(state: NodeUiState, onReady: (Boolean) -> Unit) {
                 Icon(Icons.Outlined.Sensors, "Drishti Node logo", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(34.dp))
             }
             Spacer(Modifier.height(24.dp))
-            Text("DRISHTI", style = MaterialTheme.typography.displayLarge)
-            Text("NODE", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+            Text("DRISHTI", style = MaterialTheme.typography.displayLarge, color = Color.White)
+            Text("NODE", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelLarge)
         }
     }
 }

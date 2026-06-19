@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useDebounce } from "./hooks";
 
-const WS_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://drishti-walb.onrender.com").replace(/^http/, "ws");
+const WS_BASE = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://drishti-walb.onrender.com").replace(/^http/, "ws");
 
 export type TelemetryState = {
   status: "online" | "offline" | "connecting";
