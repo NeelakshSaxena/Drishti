@@ -13,6 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrende
 
 export default function Page() {
   const [childName, setChildName] = useState<string>('Child');
+  const [childCode, setChildCode] = useState<string>('------');
   const [parentName, setParentName] = useState<string>('Not Linked');
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -33,6 +34,7 @@ export default function Page() {
         .then(res => res.json())
         .then(data => {
           if (data.child?.name) setChildName(data.child.name);
+          if (data.child?.child_code) setChildCode(data.child.child_code);
           if (data.parent_name) setParentName(data.parent_name);
           if (data.child?.lat && data.child?.lon) {
             setLocation({ lat: data.child.lat, lon: data.child.lon });
@@ -175,7 +177,11 @@ export default function Page() {
           {/* Greeting first, label below */}
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">Welcome, {childName}</h2>
-            <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-1">Current Status</p>
+            <div className="flex items-center gap-2 mt-2 mb-1">
+              <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-mono font-bold tracking-widest">{childCode}</span>
+              <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Device Code</p>
+            </div>
+            <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-3">Current Status</p>
           </div>
 
           {/* Actions */}

@@ -58,6 +58,21 @@ class NodeForegroundService : Service() {
         started = false
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        val restartIntent = Intent(applicationContext, this.javaClass)
+        restartIntent.setPackage(packageName)
+        val restartPendingIntent = PendingIntent.getService(
+            applicationContext, 1, restartIntent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.set(
+            AlarmManager.ELAPSED_REALTIME,
+            android.os.SystemClock.elapsedRealtime() + 1000,
+            restartPendingIntent
+        )
+    }
+
     private fun startHeartbeat() {
         scope.launch {
             while(isActive) {
