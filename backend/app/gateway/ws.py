@@ -32,13 +32,11 @@ async def device_websocket(websocket: WebSocket, token: str = Query(...)):
                 msg_type = payload.get("type")
                 
                 if msg_type == "heartbeat":
-                    session_manager.telemetry_service.process_heartbeat(
-                        HeartbeatPayload(device_id=device_id)
-                    )
+                    await session_manager.process_heartbeat(device_id)
                 elif msg_type == "telemetry":
                     event_type = payload.get("event_type", "unknown")
                     event_data = payload.get("data", {})
-                    session_manager.process_telemetry(device_id, event_type, event_data)
+                    await session_manager.process_telemetry(device_id, event_type, event_data)
                 else:
                     logger.warning(f"Unknown message type {msg_type} from {device_id}")
                     
@@ -50,11 +48,40 @@ async def device_websocket(websocket: WebSocket, token: str = Query(...)):
                 await websocket.send_json({"type": "error", "message": "Malformed JSON"})
                 
     except WebSocketDisconnect:
-        session_manager.disconnect(device_id)
+        await session_manager.disconnect(device_id)
         logger.info(f"Device {device_id} disconnected cleanly")
     except Exception as e:
-        session_manager.disconnect(device_id)
+        await session_manager.disconnect(device_id)
         logger.error(f"Device {device_id} disconnected with error: {e}")
+
+@router.websocket("/frontend")
+async def frontend_websocket(websocket: WebSocket, child_id: str = Query(...)):
+    # Simple validation: ensure child_id exists
+    from app.services.storage import get_child
+    child = get_child(child_id)
+    if not child:
+        await websocket.close(code=1008, reason="Invalid child ID")
+        return
+
+    await session_manager.connect_frontend(child_id, websocket)
+    
+    try:
+        while True:
+            # We don't expect messages from frontend over this WS, but keep it open
+            # and respond to pings/keepalives if they send any.
+            data = await websocket.receive_text()
+            try:
+                payload = json.loads(data)
+                if payload.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+            except json.JSONDecodeError:
+                pass
+    except WebSocketDisconnect:
+        session_manager.disconnect_frontend(child_id, websocket)
+        logger.info(f"Frontend for child {child_id} disconnected cleanly")
+    except Exception as e:
+        session_manager.disconnect_frontend(child_id, websocket)
+        logger.error(f"Frontend for child {child_id} disconnected with error: {e}")
 
 @router.post("/dispatch/{device_id}")
 async def dispatch_command(device_id: str, command: str, parameters: dict):

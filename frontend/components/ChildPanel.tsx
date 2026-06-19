@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, ArrowRight, Plus, CheckCircle2, Clock, MapPin } from "lucide-react";
+import { Loader2, ArrowRight, Plus, CheckCircle2, Clock, MapPin, Battery, Wifi, Activity, ShieldCheck, PlayCircle, Smartphone } from "lucide-react";
 import {
   startTrip,
   endTrip,
@@ -14,6 +14,7 @@ import {
   type EventRequest,
   type LocationData,
 } from "@/lib/api";
+import { useTelemetry } from "@/lib/useTelemetry";
 
 type ChildPanelProps = {
   child: Child;
@@ -25,7 +26,8 @@ export function ChildPanel({ child, onBack }: ChildPanelProps) {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"trip" | "location">("trip");
+  const [activeTab, setActiveTab] = useState<"trip" | "location" | "device">("device");
+  const telemetry = useTelemetry(child.id);
 
   // Event form
   const [eventForm, setEventForm] = useState<EventRequest>({
@@ -198,14 +200,14 @@ export function ChildPanel({ child, onBack }: ChildPanelProps) {
           Trip
         </button>
         <button
-          onClick={() => setActiveTab("location")}
+          onClick={() => setActiveTab("device")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-            activeTab === "location"
+            activeTab === "device"
               ? "border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400"
               : "border-transparent text-slate-600 dark:text-slate-400"
           }`}
         >
-          Location
+          Device Health
         </button>
       </div>
 
@@ -437,14 +439,133 @@ export function ChildPanel({ child, onBack }: ChildPanelProps) {
             </button>
           </form>
 
+          {telemetry.location && (
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 text-sm text-slate-600 dark:text-slate-400 space-y-2 mt-4">
+              <p className="font-medium text-emerald-600">Live Telemetry Location:</p>
+              <p>Latitude: {telemetry.location.lat}</p>
+              <p>Longitude: {telemetry.location.lon}</p>
+            </div>
+          )}
+
           {location && (
             <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 text-sm text-slate-600 dark:text-slate-400 space-y-2">
-              <p className="font-medium">Last Updated Location:</p>
+              <p className="font-medium">Last Manual Updated Location:</p>
               <p>Latitude: {location.lat}</p>
               <p>Longitude: {location.lng}</p>
               <p className="text-xs">{new Date(location.updated_at).toLocaleString()}</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Device Tab */}
+      {activeTab === "device" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${telemetry.status === "online" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
+                <Smartphone className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-50">Device Status</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{telemetry.status}</p>
+              </div>
+            </div>
+            {telemetry.lastHeartbeat && (
+              <div className="text-right">
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300">Last Heartbeat</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {new Date(telemetry.lastHeartbeat).toLocaleTimeString()}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Battery */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-start gap-3">
+              <Battery className="h-5 w-5 text-blue-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-sm text-slate-900 dark:text-slate-50">Battery</h4>
+                {telemetry.battery ? (
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {telemetry.battery.level}% {telemetry.battery.is_charging ? "(Charging)" : ""}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400">Waiting for data...</p>
+                )}
+              </div>
+            </div>
+
+            {/* Network */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-start gap-3">
+              <Wifi className="h-5 w-5 text-indigo-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-sm text-slate-900 dark:text-slate-50">Network</h4>
+                {telemetry.network ? (
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {telemetry.network.type} {telemetry.network.is_connected ? "(Connected)" : "(Disconnected)"}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400">Waiting for data...</p>
+                )}
+              </div>
+            </div>
+
+            {/* Media */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-start gap-3">
+              <PlayCircle className="h-5 w-5 text-purple-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-sm text-slate-900 dark:text-slate-50">Media State</h4>
+                {telemetry.media ? (
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {telemetry.media.is_playing ? "Playing" : "Paused"} • Volume: {telemetry.media.volume}%
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400">Waiting for data...</p>
+                )}
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-start gap-3">
+              <MapPin className="h-5 w-5 text-red-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-sm text-slate-900 dark:text-slate-50">Live Location</h4>
+                {telemetry.location ? (
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {telemetry.location.lat.toFixed(4)}, {telemetry.location.lon.toFixed(4)}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400">Waiting for data...</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Permissions */}
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <ShieldCheck className="h-5 w-5 text-emerald-500" />
+              <h4 className="font-medium text-sm text-slate-900 dark:text-slate-50">Permission Health</h4>
+            </div>
+            {telemetry.permissions ? (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {Object.entries(telemetry.permissions).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-slate-800">
+                    <span className="text-slate-600 dark:text-slate-400 truncate max-w-[120px]" title={key}>
+                      {key.split('.').pop()}
+                    </span>
+                    <span className={`font-medium ${value ? "text-emerald-600" : "text-red-500"}`}>
+                      {value ? "Granted" : "Denied"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">Waiting for data...</p>
+            )}
+          </div>
         </div>
       )}
     </div>

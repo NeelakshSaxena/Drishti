@@ -1,4 +1,4 @@
-# PHASE A8 — BUILD SYSTEM STABILIZATION
+# PHASE A8 — BUILD SYSTEM STABILIZATION was completed
 
 This is the MOST important missing phase.
 

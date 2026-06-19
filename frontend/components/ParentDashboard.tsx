@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, MapPin, Clock, AlertCircle } from "lucide-react";
+import { Loader2, Plus, MapPin, Clock, AlertCircle, Battery, Wifi, Smartphone } from "lucide-react";
 import {
   getChildren,
   createChild,
@@ -11,6 +11,38 @@ import {
   type Trip,
 } from "@/lib/api";
 import { UI_CONFIG, FORM_CONSTRAINTS, SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants";
+import { useTelemetry } from "@/lib/useTelemetry";
+
+function ChildStatus({ childId }: { childId: string }) {
+  const telemetry = useTelemetry(childId);
+  
+  if (telemetry.status === "connecting") {
+    return <span className="text-xs text-slate-400">Connecting...</span>;
+  }
+  
+  return (
+    <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+      <div className="flex items-center gap-1" title={`Device is ${telemetry.status}`}>
+        <Smartphone className={`h-3 w-3 ${telemetry.status === "online" ? "text-emerald-500" : "text-slate-400"}`} />
+        <span className="capitalize">{telemetry.status}</span>
+      </div>
+      
+      {telemetry.battery && (
+        <div className="flex items-center gap-1">
+          <Battery className="h-3 w-3 text-blue-500" />
+          <span>{telemetry.battery.level}%{telemetry.battery.is_charging ? " ⚡" : ""}</span>
+        </div>
+      )}
+      
+      {telemetry.network && (
+        <div className="flex items-center gap-1">
+          <Wifi className={`h-3 w-3 ${telemetry.network.is_connected ? "text-indigo-500" : "text-slate-400"}`} />
+          <span>{telemetry.network.type}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type ParentDashboardProps = {
   onSelectChild?: (child: Child) => void;
@@ -233,7 +265,10 @@ export function ParentDashboard({ onSelectChild }: ParentDashboardProps) {
                           </>
                         )}
                       </div>
-                      <span>ID: {child.id.slice(0, 8)}...</span>
+                      <span className="font-mono bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">Code: {child.child_code}</span>
+                    </div>
+                    <div className="mt-3 bg-slate-50 dark:bg-slate-800/50 p-2 rounded border border-slate-100 dark:border-slate-800 inline-block">
+                      <ChildStatus childId={child.id} />
                     </div>
                   </div>
 
