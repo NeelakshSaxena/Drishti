@@ -159,6 +159,31 @@ def ensure_data_dir():
                     share_token TEXT
                 )
             ''')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS devices (
+                    id TEXT PRIMARY KEY,
+                    name TEXT,
+                    child_id TEXT,
+                    created_at TEXT
+                )
+            ''')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS device_tokens (
+                    token TEXT PRIMARY KEY,
+                    device_id TEXT,
+                    created_at TEXT
+                )
+            ''')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS device_telemetry (
+                    id TEXT PRIMARY KEY,
+                    device_id TEXT,
+                    child_id TEXT,
+                    event_type TEXT,
+                    data TEXT,
+                    timestamp TEXT
+                )
+            ''')
         conn.commit()
         logger.info("Database tables ensured.")
     except Exception:
@@ -180,6 +205,9 @@ def migrate_db():
                 ("children", "share_token_expires_at", "TEXT"),
                 ("children", "is_sharing", "INTEGER DEFAULT 0"),
                 ("children", "location_updated_at", "TEXT"),
+                ("devices", "status", "TEXT DEFAULT 'offline'"),
+                ("devices", "last_heartbeat", "TEXT"),
+                ("devices", "active_memory_context", "TEXT")
             ]
             for table, col_name, col_type in new_cols:
                 try:
@@ -561,3 +589,86 @@ def is_healthy() -> bool:
     except Exception as e:
         logger.error(f"Storage health check failed: {e}")
         return False
+
+# ── Device operations ─────────────────────────────────────────────────────────
+
+def register_device(name: str) -> tuple[str, str]:
+    device_id = f"device_{uuid.uuid4().hex[:8]}"
+    token = f"dev-token-{uuid.uuid4().hex[:8]}"
+    now = datetime.utcnow().isoformat()
+    _execute('INSERT INTO devices (id, name, child_id, created_at) VALUES (%s, %s, NULL, %s)', (device_id, name, now))
+    _execute('INSERT INTO device_tokens (token, device_id, created_at) VALUES (%s, %s, %s)', (token, device_id, now))
+    return device_id, token
+
+def get_device(device_id: str) -> dict[str, Any] | None:
+    row = _execute('SELECT * FROM devices WHERE id = %s', (device_id,), fetch="one")
+    if not row:
+        return None
+    d = dict(row)
+    if d.get("active_memory_context"):
+        try:
+            d["active_memory_context"] = json.loads(d["active_memory_context"])
+        except json.JSONDecodeError:
+            d["active_memory_context"] = {}
+    else:
+        d["active_memory_context"] = {}
+    return d
+
+def get_device_by_token(token: str) -> dict[str, Any] | None:
+    row = _execute('SELECT device_id FROM device_tokens WHERE token = %s', (token,), fetch="one")
+    if not row:
+        return None
+    return get_device(row['device_id'])
+
+def link_device_to_child(device_id: str, child_code: str) -> tuple[bool, str]:
+    child = get_child_by_code(child_code)
+    if not child:
+        return False, "Invalid child code"
+    _execute('UPDATE devices SET child_id = %s WHERE id = %s', (child['id'], device_id))
+    return True, "Device linked successfully"
+
+def update_device_state(device_id: str, status: str = None, last_heartbeat: str = None, active_memory_context: dict = None):
+    device = get_device(device_id)
+    if not device:
+        return
+    
+    updates = []
+    params = []
+    if status is not None:
+        updates.append("status = %s")
+        params.append(status)
+    if last_heartbeat is not None:
+        updates.append("last_heartbeat = %s")
+        params.append(last_heartbeat)
+    if active_memory_context is not None:
+        updates.append("active_memory_context = %s")
+        params.append(json.dumps(active_memory_context))
+        
+    if not updates:
+        return
+        
+    query = f"UPDATE devices SET {', '.join(updates)} WHERE id = %s"
+    params.append(device_id)
+    _execute(query, tuple(params))
+
+def add_device_telemetry(device_id: str, event_type: str, data: dict[str, Any]) -> dict[str, Any] | None:
+    device = get_device(device_id)
+    if not device:
+        return None
+    child_id = device.get('child_id')
+    telemetry_id = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+    
+    _execute(
+        'INSERT INTO device_telemetry (id, device_id, child_id, event_type, data, timestamp) VALUES (%s, %s, %s, %s, %s, %s)',
+        (telemetry_id, device_id, child_id, event_type, json.dumps(data), now)
+    )
+    
+    # If location, update child
+    if child_id and event_type == "location":
+        lat = data.get("lat")
+        lon = data.get("lon")
+        if lat is not None and lon is not None:
+            update_child_location(child_id, lat, lon)
+            
+    return {"id": telemetry_id, "event_type": event_type, "timestamp": now}

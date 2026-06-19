@@ -1,14 +1,8 @@
 import logging
 from typing import Optional
+from app.services import storage
 
 logger = logging.getLogger(__name__)
-
-# Basic token based device auth for now
-# In production, this would use JWT and Redis lookup
-VALID_TOKENS = {
-    "dev-token-123": "device_1",
-    "dev-token-456": "device_2"
-}
 
 def authenticate_device(token: str) -> Optional[str]:
     """Returns device_id if authenticated, else None"""
@@ -16,9 +10,9 @@ def authenticate_device(token: str) -> Optional[str]:
         logger.warning("Empty token provided for device auth")
         return None
         
-    device_id = VALID_TOKENS.get(token)
-    if device_id:
-        return device_id
+    device = storage.get_device_by_token(token)
+    if device:
+        return device["id"]
         
     logger.warning(f"Invalid token provided: {token}")
     return None
