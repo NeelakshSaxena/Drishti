@@ -5,6 +5,7 @@ import { Bell, BatteryCharging, Signal, RefreshCw, Clock, Footprints, Menu, X, M
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTelemetry } from '@/lib/useTelemetry';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
 
@@ -15,6 +16,8 @@ export default function Page() {
   const [lastPing, setLastPing] = useState<string>('—');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  const telemetry = useTelemetry(selectedChild?.id || '');
 
   const clearSession = () => {
     localStorage.removeItem('parent_id');
@@ -32,7 +35,6 @@ export default function Page() {
     try {
       const res = await fetch(`${API_URL}/family/parent/dashboard?parent_id=${parentId}`);
       if (!res.ok) {
-        // Parent no longer exists in backend — session is stale
         clearSession();
         router.push('/register/parent');
         return;
@@ -64,9 +66,12 @@ export default function Page() {
 
   const childIsSharing = selectedChild?.is_sharing === true || selectedChild?.is_sharing === 1;
 
-  // Live marker only when actively sharing
-  const childLocation = childIsSharing && selectedChild?.lat != null && selectedChild?.lon != null
-    ? { lat: selectedChild.lat, lon: selectedChild.lon, label: selectedChild.name }
+  // Live marker prioritizes telemetry location, then falls back to static location if sharing
+  const liveLat = telemetry.location?.lat ?? selectedChild?.lat;
+  const liveLon = telemetry.location?.lon ?? selectedChild?.lon;
+  
+  const childLocation = childIsSharing && liveLat != null && liveLon != null
+    ? { lat: liveLat, lon: liveLon, label: selectedChild.name }
     : null;
 
   // Last recorded location (shown on map even when offline)
@@ -75,6 +80,7 @@ export default function Page() {
     : null;
 
   const displayLocation = childLocation ?? lastRecordedLocation ?? null;
+  const isOnline = telemetry.status === 'online';
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -93,8 +99,8 @@ export default function Page() {
         <div className="flex items-center gap-3 sm:gap-5">
           <div className="hidden sm:flex items-center gap-4 text-zinc-500">
             <Bell className="w-5 h-5" />
-            <BatteryCharging className="w-5 h-5" />
-            <Signal className="w-5 h-5" />
+            <BatteryCharging className={`w-5 h-5 ${isOnline && telemetry.battery?.is_charging ? 'text-emerald-400' : ''}`} />
+            <Signal className={`w-5 h-5 ${isOnline ? 'text-emerald-400' : ''}`} />
           </div>
           <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold">
             {parentName[0]?.toUpperCase()}
@@ -130,9 +136,15 @@ export default function Page() {
           <div className="border border-zinc-800 rounded-xl p-4 bg-zinc-900/30 space-y-1">
             <span className="text-zinc-500 text-[10px] uppercase tracking-widest">You are watching</span>
             {selectedChild ? (
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`w-2 h-2 rounded-full ${childIsSharing ? 'bg-emerald-500 animate-pulse' : lastRecordedLocation ? 'bg-amber-500' : 'bg-zinc-600'}`} />
-                <p className="text-white font-bold text-xl">{selectedChild.name}</p>
+              <div className="flex flex-col gap-2 mt-1">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
+                  <p className="text-white font-bold text-xl">{selectedChild.name}</p>
+                </div>
+                <div className="mt-1 bg-zinc-800/50 rounded p-2 border border-zinc-700">
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-widest block mb-1">Device Pairing Code</span>
+                  <span className="font-mono text-emerald-400 font-bold text-lg tracking-wider">{selectedChild.child_code}</span>
+                </div>
               </div>
             ) : (
               <p className="text-zinc-400 text-sm mt-1">No child linked yet.</p>
@@ -143,9 +155,9 @@ export default function Page() {
           {selectedChild && (
             <div className="border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-                <span className="text-[10px] text-white uppercase tracking-widest font-bold">Child Status</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${childIsSharing ? 'bg-emerald-900 text-emerald-400' : lastRecordedLocation ? 'bg-amber-900/50 text-amber-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                  {childIsSharing ? 'LIVE' : lastRecordedLocation ? 'LAST KNOWN' : 'OFFLINE'}
+                <span className="text-[10px] text-white uppercase tracking-widest font-bold">Device Status</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${isOnline ? 'bg-emerald-900 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                  {isOnline ? 'ONLINE' : 'OFFLINE'}
                 </span>
               </div>
               {displayLocation ? (
@@ -161,7 +173,7 @@ export default function Page() {
                   </div>
                   <div>
                     <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Location</p>
-                    <p className="text-white text-xs font-medium">{selectedChild.lat?.toFixed(4)}, {selectedChild.lon?.toFixed(4)}</p>
+                    <p className="text-white text-xs font-medium">{liveLat?.toFixed(4) ?? '—'}, {liveLon?.toFixed(4) ?? '—'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -169,8 +181,8 @@ export default function Page() {
                     <Clock className="w-4 h-4 text-zinc-400" />
                   </div>
                   <div>
-                    <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Last Updated</p>
-                    <p className="text-white text-xs font-medium">{lastPing}</p>
+                    <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Last Telemetry</p>
+                    <p className="text-white text-xs font-medium">{telemetry.lastHeartbeat ? new Date(telemetry.lastHeartbeat).toLocaleTimeString() : lastPing}</p>
                   </div>
                 </div>
               </>
@@ -184,15 +196,15 @@ export default function Page() {
             <div className="bg-zinc-900/30 border border-zinc-800 p-3 rounded-lg">
               <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Battery</p>
               <div className="flex items-center gap-1">
-                <BatteryCharging className="w-4 h-4 text-zinc-400" />
-                <span className="text-sm font-bold text-white">84%</span>
+                <BatteryCharging className={`w-4 h-4 ${telemetry.battery?.is_charging ? 'text-emerald-400' : 'text-zinc-400'}`} />
+                <span className="text-sm font-bold text-white">{telemetry.battery ? `${telemetry.battery.level}%` : '—'}</span>
               </div>
             </div>
             <div className="bg-zinc-900/30 border border-zinc-800 p-3 rounded-lg">
-              <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">ETA Home</p>
+              <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Network</p>
               <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 text-zinc-400" />
-                <span className="text-sm font-bold text-white">—</span>
+                <Signal className={`w-4 h-4 ${telemetry.network?.is_connected ? 'text-emerald-400' : 'text-zinc-400'}`} />
+                <span className="text-sm font-bold text-white">{telemetry.network?.type ?? '—'}</span>
               </div>
             </div>
           </div>

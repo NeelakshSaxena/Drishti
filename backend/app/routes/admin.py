@@ -192,3 +192,45 @@ def get_child_location(child_id: str, x_root_token: str = Header(None)):
         "parent_name": parent_name,
         "current_trip": child.get("current_trip"),
     }
+
+# ── Live Traffic ─────────────────────────────────────────────────────────────
+
+@router.get("/traffic")
+def get_live_traffic(x_root_token: str = Header(None)):
+    """See connected nodes and live WebSocket session states."""
+    _verify_root(x_root_token)
+    try:
+        from app.gateway.ws import session_manager
+        
+        nodes = []
+        for device_id in session_manager.active_connections.keys():
+            device = storage.get_device(device_id)
+            nodes.append({
+                "device_id": device_id,
+                "child_id": device.get('child_id') if device else None,
+                "name": device.get('name') if device else "Unknown",
+                "status": device.get('status') if device else "offline",
+                "last_heartbeat": device.get('last_heartbeat') if device else None
+            })
+            
+        frontends = []
+        for child_id, sockets in session_manager.frontend_connections.items():
+            child = storage.get_child(child_id)
+            frontends.append({
+                "child_id": child_id,
+                "child_name": child.get('name') if child else "Unknown",
+                "connections_count": len(sockets)
+            })
+            
+        return {
+            "success": True,
+            "connected_devices_count": len(nodes),
+            "connected_devices": nodes,
+            "connected_frontends_count": len(frontends),
+            "connected_frontends": frontends,
+            "server_responding": True
+        }
+    except Exception as e:
+        logger.error(f"Error fetching traffic: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch traffic")
+
