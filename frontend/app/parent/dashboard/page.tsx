@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, BatteryCharging, Signal, RefreshCw, Clock, Footprints, Menu, X, Map as MapIcon } from 'lucide-react';
 import { MapView } from '@/components/MapView';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTelemetry } from '@/lib/useTelemetry';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://drishti-walb.onrender.com';
@@ -181,7 +182,7 @@ export default function Page() {
                   </div>
                   <div>
                     <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Last Telemetry</p>
-                    <p className="text-white text-xs font-medium">{telemetry.lastUpdate ? new Date(telemetry.lastUpdate).toLocaleTimeString() : lastPing}</p>
+                    <p className="text-white text-xs font-medium">{telemetry.lastHeartbeat ? new Date(telemetry.lastHeartbeat).toLocaleTimeString() : lastPing}</p>
                   </div>
                 </div>
               </>
