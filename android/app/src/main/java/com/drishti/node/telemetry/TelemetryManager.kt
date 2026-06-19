@@ -74,7 +74,11 @@ class TelemetryManager(
         // Simple manual JSON stringifier for demo purposes
         // In real project, use Moshi/Gson
         val eventsStr = events.joinToString(",") { ev ->
-            val dataStr = ev.data.entries.joinToString(",") { "\"${it.key}\": \"${it.value}\"" }
+            val dataStr = ev.data.entries.joinToString(",") { 
+                val v = it.value
+                val valueStr = if (v is String) "\"$v\"" else v.toString()
+                "\"${it.key}\": $valueStr"
+            }
             "{\"type\":\"${ev.type}\",\"timestamp\":${ev.timestamp},\"data\":{$dataStr}}"
         }
         return "{\"batch\":[$eventsStr]}"

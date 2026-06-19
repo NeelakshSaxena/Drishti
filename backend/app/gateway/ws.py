@@ -29,19 +29,25 @@ async def device_websocket(websocket: WebSocket, token: str = Query(...)):
             data = await websocket.receive_text()
             try:
                 payload = json.loads(data)
-                msg_type = payload.get("type")
-                
-                if msg_type == "heartbeat":
-                    await session_manager.process_heartbeat(device_id)
-                elif msg_type == "telemetry":
-                    event_type = payload.get("event_type", "unknown")
-                    event_data = payload.get("data", {})
-                    await session_manager.process_telemetry(device_id, event_type, event_data)
+                if "batch" in payload:
+                    for event in payload["batch"]:
+                        event_type = event.get("type", "unknown")
+                        event_data = event.get("data", {})
+                        await session_manager.process_telemetry(device_id, event_type, event_data)
+                    await websocket.send_json({"type": "ack", "msg_type": "batch"})
                 else:
-                    logger.warning(f"Unknown message type {msg_type} from {device_id}")
+                    msg_type = payload.get("type")
+                    if msg_type == "heartbeat":
+                        await session_manager.process_heartbeat(device_id)
+                    elif msg_type == "telemetry":
+                        event_type = payload.get("event_type", "unknown")
+                        event_data = payload.get("data", {})
+                        await session_manager.process_telemetry(device_id, event_type, event_data)
+                    else:
+                        logger.warning(f"Unknown message type {msg_type} from {device_id}")
                     
-                # Echo back ACK
-                await websocket.send_json({"type": "ack", "msg_type": msg_type})
+                    # Echo back ACK
+                    await websocket.send_json({"type": "ack", "msg_type": msg_type})
                 
             except json.JSONDecodeError:
                 logger.error(f"Malformed JSON from device {device_id}")
