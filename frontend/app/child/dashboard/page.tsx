@@ -21,6 +21,7 @@ export default function Page() {
   const [shareExpiry, setShareExpiry] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
+  const [payloadCopied, setPayloadCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const watchIdRef = useRef<number | null>(null);
 
@@ -177,9 +178,25 @@ export default function Page() {
           {/* Greeting first, label below */}
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">Welcome, {childName}</h2>
-            <div className="flex items-center gap-2 mt-2 mb-1">
-              <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-mono font-bold tracking-widest">{childCode}</span>
-              <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Device Code</p>
+            <div className="flex items-center gap-2 mt-2 mb-1 justify-between">
+              <div className="flex items-center gap-2">
+                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-mono font-bold tracking-widest">{childCode}</span>
+                <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Device Code</p>
+              </div>
+              <button 
+                onClick={() => {
+                  const payload = JSON.stringify({ pairing_code: childCode, endpoint: API_URL });
+                  navigator.clipboard.writeText(payload).then(() => {
+                    setPayloadCopied(true);
+                    setTimeout(() => setPayloadCopied(false), 2000);
+                  });
+                }}
+                className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                title="Copy JSON Pairing Payload"
+              >
+                <Copy className="w-3 h-3" />
+                {payloadCopied ? <span className="text-emerald-400 font-bold">Copied JSON!</span> : <span>Copy JSON</span>}
+              </button>
             </div>
             <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-3">Current Status</p>
           </div>
