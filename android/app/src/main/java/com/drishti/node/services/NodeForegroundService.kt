@@ -34,13 +34,41 @@ class NodeForegroundService : Service() {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .build()
 
-        startForeground(1, notification)
+        var serviceType = android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                serviceType = serviceType or android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R && 
+                androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                serviceType = serviceType or android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            }
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S || 
+                androidx.core.content.ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_CONNECT") == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                serviceType = serviceType or android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+            }
+        }
+
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                androidx.core.app.ServiceCompat.startForeground(this, 1, notification, serviceType)
+            } else {
+                startForeground(1, notification)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            startForeground(1, notification)
+        }
         
         if (!started) {
             started = true
             webSocketManager.connect()
             telemetryManager.start()
-            audioCollector.startListening()
+            // Only start listening if microphone permission is actually granted
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                audioCollector.startListening()
+            }
             startHeartbeat()
         }
 
