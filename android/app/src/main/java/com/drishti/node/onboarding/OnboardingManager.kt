@@ -23,9 +23,10 @@ class OnboardingManager @Inject constructor(
         alwaysRemember: Boolean = true
     ): Result<PairingResult> = withContext(Dispatchers.IO) {
         runCatching {
-            val qrJson = JSONObject(qrPayload)
-            val pairingCode = qrJson.getString("pairing_code")
-            val endpoint = qrJson.optString("endpoint", authTokenManager.getBackendUrl()).trimEnd('/')
+            val qrString = qrPayload.trim()
+            val isJson = qrString.startsWith("{") && qrString.endsWith("}")
+            val pairingCode = if (isJson) JSONObject(qrString).getString("pairing_code") else qrString
+            val endpoint = if (isJson) JSONObject(qrString).optString("endpoint", authTokenManager.getBackendUrl()).trimEnd('/') else authTokenManager.getBackendUrl().trimEnd('/')
             val registration = postJson(
                 "$endpoint/device/register",
                 JSONObject().put("pairing_code", pairingCode).put("name", deviceName)

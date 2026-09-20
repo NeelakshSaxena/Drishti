@@ -55,7 +55,7 @@ class TelemetryManager(
     private suspend fun processEvent(event: TelemetryEvent) {
         // Feature flags drop events before caching or batching
         when (event.type) {
-            "location_update" -> {
+            "location" -> {
                 if (!authTokenManager.isLocationSharingEnabled()) return
             }
             "battery_update", "network_update" -> {
@@ -68,7 +68,7 @@ class TelemetryManager(
         
         // Delta update logic: Only add to queue if data changed
         val lastEvent = lastEventCache[event.type]
-        if (lastEvent == null || lastEvent.data != event.data) {
+        if (lastEvent == null || lastEvent.data != event.data || event.type == "location") {
             lastEventCache[event.type] = event
             synchronized(batchQueue) {
                 batchQueue.add(event)

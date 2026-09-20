@@ -94,6 +94,9 @@ dependencies {
     // OkHttp
     implementation(libs.okhttp)
 
+    // Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     // Security
     implementation(libs.security.crypto)
 

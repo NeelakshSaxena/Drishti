@@ -179,6 +179,7 @@ fun LoginScreen(
             value = token,
             onValueChange = { token = it },
             label = { Text("Device token") },
+            supportingText = { Text("Enter the permanent dev-token-..., NOT a 6-letter pairing code. Use 'Pair a new device' below for pairing codes.") },
             leadingIcon = { Icon(Icons.Outlined.Key, null) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
@@ -238,9 +239,9 @@ fun PairingScreen(
                     OutlinedTextField(
                         value = payload,
                         onValueChange = { payload = it },
-                        label = { Text("Pairing QR payload") },
+                        label = { Text("Pairing QR payload or 6-letter code") },
                         minLines = 4,
-                        supportingText = { Text("""Example: {"pairing_code":"...","endpoint":"https://..."}""") },
+                        supportingText = { Text("""Paste the full JSON payload, or just the 6-letter code (e.g. AVTLAX)""") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(18.dp))
