@@ -37,7 +37,7 @@ async def device_websocket(websocket: WebSocket, token: str = Query(...)):
                     await websocket.send_json({"type": "ack", "msg_type": "batch"})
                 else:
                     msg_type = payload.get("type")
-                    if msg_type == "heartbeat":
+                    if msg_type in ["heartbeat", "worker_heartbeat"]:
                         await session_manager.process_heartbeat(device_id)
                     elif msg_type == "telemetry":
                         event_type = payload.get("event_type", "unknown")

@@ -11,9 +11,12 @@ import kotlinx.coroutines.delay
 import java.util.concurrent.ConcurrentHashMap
 import com.drishti.node.networking.WebSocketManager
 
+import com.drishti.node.networking.AuthTokenManager
+
 class TelemetryManager(
     private val collectors: List<TelemetryCollector>,
-    private val webSocketManager: WebSocketManager
+    private val webSocketManager: WebSocketManager,
+    private val authTokenManager: AuthTokenManager
 ) {
     private val scope = CoroutineScope(Dispatchers.IO)
     private val eventChannel = Channel<TelemetryEvent>(Channel.BUFFERED)
@@ -50,6 +53,19 @@ class TelemetryManager(
     }
 
     private suspend fun processEvent(event: TelemetryEvent) {
+        // Feature flags drop events before caching or batching
+        when (event.type) {
+            "location_update" -> {
+                if (!authTokenManager.isLocationSharingEnabled()) return
+            }
+            "battery_update", "network_update" -> {
+                if (!authTokenManager.isHealthSharingEnabled()) return
+            }
+            "screen_update", "bluetooth_update", "notification", "media_session", "foreground_app", "ui_text_extracted" -> {
+                if (!authTokenManager.isTelemetrySharingEnabled()) return
+            }
+        }
+        
         // Delta update logic: Only add to queue if data changed
         val lastEvent = lastEventCache[event.type]
         if (lastEvent == null || lastEvent.data != event.data) {

@@ -81,19 +81,19 @@ export async function getChildDashboard(childId: string): Promise<{ child: Child
 }
 
 export async function getChildDetails(childId: string): Promise<Child> {
-  const res = await fetch(`${API_BASE}/child/${childId}`);
+  const res = await fetch(`${API_BASE}/parent/child/${childId}`);
   if (!res.ok) throw new Error("Failed to get child details");
   return res.json();
 }
 
 export async function getChildren(): Promise<Child[]> {
-  const res = await fetch(`${API_BASE}/children`);
+  const res = await fetch(`${API_BASE}/parent/children`);
   if (!res.ok) throw new Error("Failed to get children");
   return res.json();
 }
 
 export async function createChild(name: string): Promise<Child> {
-  const res = await fetch(`${API_BASE}/children`, {
+  const res = await fetch(`${API_BASE}/parent/create-child`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name }),
@@ -115,7 +115,7 @@ export async function endTrip(childId: string): Promise<Trip> {
 }
 
 export async function addEvent(tripId: string, event: EventRequest): Promise<TripEvent> {
-  const res = await fetch(`${API_BASE}/trip/${tripId}/event`, {
+  const res = await fetch(`${API_BASE}/trip/${tripId}/event/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(event),
@@ -135,7 +135,7 @@ export async function nextEvent(tripId: string): Promise<{
 }
 
 export async function updateLocation(childId: string, lat: number, lng: number): Promise<LocationData> {
-  const res = await fetch(`${API_BASE}/child/${childId}/location`, {
+  const res = await fetch(`${API_BASE}/child/${childId}/location/update`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ lat, lng }),

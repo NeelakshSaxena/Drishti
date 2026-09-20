@@ -1,4 +1,5 @@
 $ErrorActionPreference = "Stop"
+$ProgressPreference = 'SilentlyContinue'
 $toolsDir = "g:\Projects\Drishti\toolchain"
 $sdkDir = "$toolsDir\android-sdk"
 $cmdlineToolsDir = "$sdkDir\cmdline-tools\latest"
@@ -23,9 +24,10 @@ $env:PATH = "$env:JAVA_HOME\bin;" + $env:PATH
 $env:ANDROID_HOME = $sdkDir
 
 Write-Host "Accepting licenses..."
-$homeDir = [Environment]::GetFolderPath("UserProfile")
-if (!(Test-Path "$homeDir\.android")) { New-Item -ItemType Directory -Path "$homeDir\.android" | Out-Null }
-if (!(Test-Path "$homeDir\.android\repositories.cfg")) { New-Item -ItemType File -Path "$homeDir\.android\repositories.cfg" | Out-Null }
+$androidUserHome = "$toolsDir\.android"
+if (!(Test-Path $androidUserHome)) { New-Item -ItemType Directory -Path $androidUserHome | Out-Null }
+if (!(Test-Path "$androidUserHome\repositories.cfg")) { New-Item -ItemType File -Path "$androidUserHome\repositories.cfg" | Out-Null }
+$env:ANDROID_USER_HOME = $androidUserHome
 
 $yes = "y`n" * 10
 $yes | & "$cmdlineToolsDir\bin\sdkmanager.bat" --licenses

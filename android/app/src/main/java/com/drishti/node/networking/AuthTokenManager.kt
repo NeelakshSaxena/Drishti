@@ -32,6 +32,11 @@ class AuthTokenManager(context: Context) {
     fun isAlwaysRememberEnabled(): Boolean = prefs.getBoolean("always_remember", true)
     fun isDarkModeEnabled(): Boolean = prefs.getBoolean("dark_mode", true)
     
+    // Feature Toggles
+    fun isLocationSharingEnabled(): Boolean = prefs.getBoolean("location_sharing", true)
+    fun isHealthSharingEnabled(): Boolean = prefs.getBoolean("health_sharing", true)
+    fun isTelemetrySharingEnabled(): Boolean = prefs.getBoolean("telemetry_sharing", true)
+    
     fun saveToken(token: String, secret: String, expiryTimeMs: Long) {
         prefs.edit()
             .putString("jwt_token", token)
@@ -62,6 +67,14 @@ class AuthTokenManager(context: Context) {
             .putString("backend_url", backendUrl.trimEnd('/'))
             .putBoolean("always_remember", alwaysRemember)
             .putBoolean("dark_mode", darkMode)
+            .apply()
+    }
+
+    fun updateFeatureToggles(location: Boolean, health: Boolean, telemetry: Boolean) {
+        prefs.edit()
+            .putBoolean("location_sharing", location)
+            .putBoolean("health_sharing", health)
+            .putBoolean("telemetry_sharing", telemetry)
             .apply()
     }
     

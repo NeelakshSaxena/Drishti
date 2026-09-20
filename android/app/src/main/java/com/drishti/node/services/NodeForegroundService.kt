@@ -8,7 +8,6 @@ import androidx.core.app.NotificationCompat
 import com.drishti.node.core.Constants
 import com.drishti.node.networking.WebSocketManager
 import com.drishti.node.telemetry.TelemetryManager
-import com.drishti.node.audio.AudioCollector
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import javax.inject.Inject
@@ -18,7 +17,6 @@ class NodeForegroundService : Service() {
 
     @Inject lateinit var webSocketManager: WebSocketManager
     @Inject lateinit var telemetryManager: TelemetryManager
-    @Inject lateinit var audioCollector: AudioCollector
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var started = false
 
@@ -65,10 +63,6 @@ class NodeForegroundService : Service() {
             started = true
             webSocketManager.connect()
             telemetryManager.start()
-            // Only start listening if microphone permission is actually granted
-            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                audioCollector.startListening()
-            }
             startHeartbeat()
         }
 
@@ -80,7 +74,6 @@ class NodeForegroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         telemetryManager.stop()
-        audioCollector.stopListening()
         webSocketManager.disconnect()
         scope.cancel()
         started = false

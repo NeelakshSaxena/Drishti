@@ -13,7 +13,6 @@ class PermissionHelper(private val context: Context) {
         val permissionsToCheck = listOf(
             "android.permission.RECORD_AUDIO",
             "android.permission.ACCESS_FINE_LOCATION",
-            "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE",
             "android.permission.BLUETOOTH_CONNECT"
         )
         val report = mutableMapOf<String, Boolean>()
