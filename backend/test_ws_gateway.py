@@ -77,11 +77,34 @@ def test_reconnect():
         
     print("[OK] Reconnect works and commands dispatched")
 
+def test_android_discrepancy_payloads():
+    print("Testing Android discrepancy payloads (worker_heartbeat, audio_event)...")
+    with client.websocket_connect("/ws/device?token=dev-token-789") as ws:
+        # Test worker_heartbeat
+        ws.send_json({"type": "worker_heartbeat"})
+        ack = ws.receive_json()
+        assert ack["type"] == "ack"
+        assert ack["msg_type"] == "worker_heartbeat"
+
+        # Test audio_event
+        ws.send_json({
+            "type": "audio_event",
+            "event": "wake_word_detected",
+            "timestamp": 1234567890,
+            "payload": "base64audio"
+        })
+        ack = ws.receive_json()
+        assert ack["type"] == "ack"
+        assert ack["msg_type"] == "audio_event"
+        
+    print("[OK] Android payload discrepancies correctly parsed")
+
 def main():
     print("Starting Device Gateway Tests...")
     test_invalid_auth()
     test_valid_auth_and_telemetry()
     test_reconnect()
+    test_android_discrepancy_payloads()
     print("[SUCCESS] All WS Gateway tests passed!")
     return 0
 

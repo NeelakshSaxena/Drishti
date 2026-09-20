@@ -105,3 +105,4 @@ class SessionManager:
                 "data": data,
                 "timestamp": payload.timestamp
             })
+

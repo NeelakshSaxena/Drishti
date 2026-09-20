@@ -69,6 +69,7 @@ fun DrishtiNavGraph(
                 onReconnect = viewModel::reconnect,
                 onHeartbeat = viewModel::sendHeartbeat,
                 onServiceChanged = viewModel::setServiceRunning,
+                onTogglesChanged = viewModel::updateFeatureToggles,
                 onDismiss = viewModel::clearNotice
             )
         }

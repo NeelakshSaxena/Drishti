@@ -275,6 +275,7 @@ fun DashboardScreen(
     onReconnect: () -> Unit,
     onHeartbeat: () -> Unit,
     onServiceChanged: (Boolean) -> Unit,
+    onTogglesChanged: (Boolean, Boolean, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     ScreenScaffold("Drishti Node", null, actions = {
@@ -283,7 +284,7 @@ fun DashboardScreen(
         BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
             val wide = maxWidth >= 700.dp
             val body: @Composable () -> Unit = {
-                DashboardOverview(state, onReconnect, onHeartbeat, onServiceChanged, onDismiss)
+                DashboardOverview(state, onReconnect, onHeartbeat, onServiceChanged, onTogglesChanged, onDismiss)
             }
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
@@ -306,6 +307,7 @@ private fun DashboardOverview(
     onReconnect: () -> Unit,
     onHeartbeat: () -> Unit,
     onServiceChanged: (Boolean) -> Unit,
+    onTogglesChanged: (Boolean, Boolean, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     LazyColumn(
@@ -403,6 +405,23 @@ private fun DashboardOverview(
                 StatusRow("Authentication", if (state.authenticated) "Encrypted session active" else "Signed out", state.authenticated)
                 StatusRow("Permissions", "${state.permissions.count { it.granted }} of ${state.permissions.size} healthy", state.permissions.all { it.granted })
                 StatusRow("Telemetry", "${state.telemetry.count { it.active }} of ${state.telemetry.size} collectors ready", state.telemetry.all { it.active })
+            }
+        }
+        item {
+            GlassCard {
+                SectionLabel("Sharing Settings")
+                Spacer(Modifier.height(12.dp))
+                SettingToggle("Location sharing", "Share precise location with gateway", state.locationSharingEnabled) { loc ->
+                    onTogglesChanged(loc, state.healthSharingEnabled, state.telemetrySharingEnabled)
+                }
+                HorizontalDivider()
+                SettingToggle("Device health sharing", "Share battery and network state", state.healthSharingEnabled) { health ->
+                    onTogglesChanged(state.locationSharingEnabled, health, state.telemetrySharingEnabled)
+                }
+                HorizontalDivider()
+                SettingToggle("Telemetry sharing", "Share app usage and context stream", state.telemetrySharingEnabled) { telemetry ->
+                    onTogglesChanged(state.locationSharingEnabled, state.healthSharingEnabled, telemetry)
+                }
             }
         }
     }

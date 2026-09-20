@@ -121,6 +121,12 @@ class NodeViewModel @Inject constructor(
         _uiState.update { it.copy(message = "Settings saved") }
     }
 
+    fun updateFeatureToggles(location: Boolean, health: Boolean, telemetry: Boolean) {
+        auth.updateFeatureToggles(location, health, telemetry)
+        refreshLocalState()
+        _uiState.update { it.copy(message = "Sharing settings updated") }
+    }
+
     fun logout() {
         socket.disconnect()
         context.stopService(Intent(context, NodeForegroundService::class.java))
@@ -152,6 +158,9 @@ class NodeViewModel @Inject constructor(
                 backendUrl = auth.getBackendUrl(),
                 alwaysRemember = auth.isAlwaysRememberEnabled(),
                 darkMode = auth.isDarkModeEnabled(),
+                locationSharingEnabled = auth.isLocationSharingEnabled(),
+                healthSharingEnabled = auth.isHealthSharingEnabled(),
+                telemetrySharingEnabled = auth.isTelemetrySharingEnabled(),
                 permissions = permissionStatuses(),
                 telemetry = telemetryStatuses(),
                 batteryLevel = batteryLevel(),
@@ -180,7 +189,7 @@ class NodeViewModel @Inject constructor(
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )?.contains(context.packageName) == true
         return listOf(
-            PermissionStatus(Manifest.permission.RECORD_AUDIO, "Microphone", "Wake word and voice capture", permissionHelper.hasPermission(Manifest.permission.RECORD_AUDIO)),
+
             PermissionStatus(Manifest.permission.ACCESS_FINE_LOCATION, "Precise location", "Location telemetry", permissionHelper.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)),
             PermissionStatus(BLUETOOTH_CONNECT_PERMISSION, "Nearby devices", "Bluetooth telemetry", permissionHelper.hasPermission(BLUETOOTH_CONNECT_PERMISSION)),
             PermissionStatus("notification_access", "Notification access", "Notification telemetry", notificationAccess, true),

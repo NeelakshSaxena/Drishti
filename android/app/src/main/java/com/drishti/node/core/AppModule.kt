@@ -14,9 +14,6 @@ import com.drishti.node.telemetry.TelemetryManager
 import com.drishti.node.telemetry.collectors.*
 import com.drishti.node.permissions.PermissionHelper
 import com.drishti.node.permissions.PrivacyManager
-import com.drishti.node.audio.WakeWordEngine
-import com.drishti.node.audio.VadEngine
-import com.drishti.node.audio.AudioCollector
 import com.drishti.node.onboarding.OnboardingManager
 
 @Module
@@ -56,29 +53,6 @@ object AppModule {
         return PrivacyManager()
     }
 
-    @Provides
-    @Singleton
-    fun provideWakeWordEngine(): WakeWordEngine {
-        return WakeWordEngine()
-    }
-    
-    @Provides
-    @Singleton
-    fun provideVadEngine(): VadEngine {
-        return VadEngine()
-    }
-
-    @Provides
-    @Singleton
-    fun provideAudioCollector(
-        @ApplicationContext context: Context,
-        permissionHelper: PermissionHelper,
-        webSocketManager: WebSocketManager,
-        wakeWordEngine: WakeWordEngine,
-        vadEngine: VadEngine
-    ): AudioCollector {
-        return AudioCollector(context, permissionHelper, webSocketManager, wakeWordEngine, vadEngine)
-    }
 
     @Provides
     @Singleton
@@ -94,7 +68,8 @@ object AppModule {
     fun provideTelemetryManager(
         @ApplicationContext context: Context,
         webSocketManager: WebSocketManager,
-        permissionHelper: PermissionHelper
+        permissionHelper: PermissionHelper,
+        authTokenManager: AuthTokenManager
     ): TelemetryManager {
         val collectors = listOf(
             BatteryCollector(context),
@@ -106,6 +81,6 @@ object AppModule {
             MediaPlaybackCollector(),
             AccessibilityCollector()
         )
-        return TelemetryManager(collectors, webSocketManager)
+        return TelemetryManager(collectors, webSocketManager, authTokenManager)
     }
 }
